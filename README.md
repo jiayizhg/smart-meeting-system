@@ -1,8 +1,10 @@
 # Smart Meeting System
 
 
----
+## Installation
+To get started, clone the repo:
 
+`$ git clone https://github.com/jiayizhg/smart-meeting-system.git`
 
 ## Setup
 
