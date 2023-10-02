@@ -26,13 +26,13 @@ export default {
   },
   data () {
     return {
-      authEndpoint: "",
-      sdkKey: "",
-      meetingNumber: "123456789",
-      passWord: "",
+      authEndpoint: "http://localhost:4000",
+      sdkKey: "u8To97SrT22clDxYXkHd0w",
+      meetingNumber: "82658206741",
+      passWord: "524230",
       role: 0,
-      userName: "Vue.js",
-      userEmail: "",
+      userName: "Owen",
+      userEmail: "owen@gmail.com",
       registrantToken: '',
       zakToken: '',
       leaveUrl: "http://localhost:8080"
