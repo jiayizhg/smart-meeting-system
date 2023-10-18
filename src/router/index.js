@@ -5,9 +5,6 @@ import scheduling from '../views/calendar/scheduling.vue'
 
 Vue.use(VueRouter)
 
-// const HelloWorld = { template: '<div>HelloWorld</div>' }
-// const scheduling = { template: '<div>scheduling</div>' }
-
 const routes = [
     {
         path: "/",

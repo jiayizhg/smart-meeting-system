@@ -1,5 +1,5 @@
 <template>
-    <div>
+    <div id="scheduling">
       <h1>Google Calendar Integration</h1>
       <button @click="handleAuthClick">Authorize</button>
       <button @click="handleSignOutClick">Sign Out</button>
@@ -11,7 +11,7 @@
   <script src="https://apis.google.com/js/platform.js"></script>
   <script>
 
-    const CLIENT_ID = '737463276639-k0c74f7t11emud5gfb3ftoc4a66lsvus.apps.googleusercontent.com'
+    const CLIENT_ID = '737463276639-2uvkfra1rt9185d369u2ct0ilk76hegq.apps.googleusercontent.com'
     const API_KEY = 'AIzaSyB3Yrl7uPAOoCxZ3m3K4mQmcBncSi1AJ9c'
     const DISCOVERY_DOCS = 'https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest'
     const SCOPES = 'https://www.googleapis.com/auth/calendar'
@@ -88,4 +88,12 @@
         }
     };
 </script>
-    
+
+<style scoped>
+
+
+/* .scheduling {
+   background: white;
+ } */
+
+</style> 
