@@ -29,11 +29,13 @@
     "@zoomus/websdk": "^2.16.0",
     "axios": "^0.21.2",
     "core-js": "^3.6.5",
+    "cors": "^2.8.5",
     "gapi-client": "^0.0.3",
     "is-svg": "^4.2.2",
     "moment": "^2.29.4",
     "postcss": "^8.2.10",
     "vue": "^2.6.12",
+    "vue-axios-cors": "^1.0.1",
     "vue-router": "^3.5.0"
   },
   "devDependencies": {
