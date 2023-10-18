@@ -23,3 +23,12 @@ main {
   button:hover {
     background-color: #2681F2;
   }
+
+  #app {
+    width: 70%;
+    margin: auto;
+    text-align: center;
+  }
+  #zmmtg-root {
+    display: none;
+  }

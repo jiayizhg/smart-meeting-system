@@ -1,37 +1,21 @@
 <template>
   <div id="app">
-    <HelloWorld />
-    <scheduling />
+    <p>
+        <!-- use router-link component for navigation. -->
+        <!-- specify the link by passing the `to` prop. -->
+        <!-- `<router-link>` will be rendered as an `<a>` tag by default -->
+      <router-link to="/scheduling">scheduling</router-link>
+    </p>
+      <!-- route outlet -->
+      <!-- component matched by the route will render here -->
+    <router-view></router-view>
   </div>
 </template>
 
 <script>
-import HelloWorld from './components/HelloWorld.vue';
-import scheduling from './views/calendar/scheduling.vue';
 
-export default {
-  name: 'App',
-  components: {
-    HelloWorld,
-    scheduling
-  }
-}
-
-// export default {
-//   name: 'App',
-//   components: {
-//     scheduling
-//   }
-// }
 </script>
 
 <style>
-#app {
-  width: 70%;
-  margin: auto;
-  text-align: center;
-}
-#zmmtg-root {
-  display: none;
-}
+
 </style>

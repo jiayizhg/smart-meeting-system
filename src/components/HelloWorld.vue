@@ -28,8 +28,8 @@ export default {
     return {
       authEndpoint: "http://localhost:4000",
       sdkKey: "u8To97SrT22clDxYXkHd0w",
-      meetingNumber: "88661741739",
-      passWord: "6TmY5j",
+      meetingNumber: "82433094380",
+      passWord: "fDGQ69",
       role: 0,
       userName: "Owen",
       userEmail: "owen@gmail.com",
