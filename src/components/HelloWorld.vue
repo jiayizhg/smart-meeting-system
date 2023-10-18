@@ -1,6 +1,6 @@
 <template>
   <main>
-    <h1>Zoom Meeting SDK Sample Vue.js 2</h1>
+    <h1>Smart Meeting System</h1>
     <button @click="getSignature">Join Meeting</button>
   </main>
 </template>
@@ -28,8 +28,8 @@ export default {
     return {
       authEndpoint: "http://localhost:4000",
       sdkKey: "u8To97SrT22clDxYXkHd0w",
-      meetingNumber: "82658206741",
-      passWord: "524230",
+      meetingNumber: "82433094380",
+      passWord: "fDGQ69",
       role: 0,
       userName: "Owen",
       userEmail: "owen@gmail.com",
@@ -85,7 +85,7 @@ export default {
 }
 </script>
 
-<!-- Add "scoped" attribute to limit CSS to this component only -->
+<!-- Add "scoped" attribute to limit CSS to this component only
 <style scoped>
 main {
   width: 70%;
@@ -112,4 +112,4 @@ main button {
 main button:hover {
   background-color: #2681F2;
 }
-</style>
+</style> -->

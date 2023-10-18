@@ -1,14 +1,23 @@
 {
-  "name": "meetingsdk-sample-vuejs",
+  "name": "smart-meeting-system",
   "version": "2.16.0",
   "private": true,
-  "author": "Zoom Video Communications, Inc.",
+  "author": "Virginia Tech",
   "contributors": [
     {
-      "name": "Max Mansfield"
+      "name": "Weiting Li"
     },
     {
-      "name": "Tommy Gaessler"
+      "name": "Rundong Liang"
+    },
+    {
+      "name": "Yumin Wang"
+    },
+    {
+      "name": "Tinghui Wu"
+    },
+    {
+      "name": "Jiayi Zhang"
     }
   ],
   "scripts": {
@@ -20,9 +29,12 @@
     "@zoomus/websdk": "^2.16.0",
     "axios": "^0.21.2",
     "core-js": "^3.6.5",
+    "gapi-client": "^0.0.3",
     "is-svg": "^4.2.2",
+    "moment": "^2.29.4",
     "postcss": "^8.2.10",
-    "vue": "^2.6.12"
+    "vue": "^2.6.12",
+    "vue-router": "^3.5.0"
   },
   "devDependencies": {
     "@vue/cli-plugin-babel": "~4.5.15",
