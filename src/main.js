@@ -1,6 +1,7 @@
 import Vue from 'vue/dist/vue.js'
 import App from './App.vue'
 import router from "./router"
+import store from './store'
 import './assets/styles/main.css'
 import Axios from 'axios'
 
@@ -15,6 +16,7 @@ Axios.defaults.baseURL = '/scheduling'
 
 new Vue({
   router,
+  store,
   render: h => h(App),
 }).$mount('#app')
 

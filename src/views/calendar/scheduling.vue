@@ -25,6 +25,8 @@
             };
         }, 
         created() {
+            
+            console.log(this.$store);
             this.api = gapi;
             this.handleClientLoad();
         },

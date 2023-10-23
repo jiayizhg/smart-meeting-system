@@ -21,9 +21,9 @@
     }
   ],
   "scripts": {
-    "serve": "vue-cli-service serve",
-    "build": "vue-cli-service build",
-    "lint": "vue-cli-service lint"
+    "serve": "SET NODE_OPTIONS=--openssl-legacy-provider &&vue-cli-service serve",
+    "build": "SET NODE_OPTIONS=--openssl-legacy-provider &&vue-cli-service build",
+    "lint": "SET NODE_OPTIONS=--openssl-legacy-provider &&vue-cli-service lint"
   },
   "dependencies": {
     "@zoomus/websdk": "^2.16.0",
@@ -36,7 +36,8 @@
     "postcss": "^8.2.10",
     "vue": "^2.6.12",
     "vue-axios-cors": "^1.0.1",
-    "vue-router": "^3.5.0"
+    "vue-router": "^3.5.0",
+    "vuex": "3.0.1"
   },
   "devDependencies": {
     "@vue/cli-plugin-babel": "~4.5.15",
