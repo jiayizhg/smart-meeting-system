@@ -117,7 +117,7 @@ def update_member_role(user_id: int, meeting_room_id: int, role: str, db: Sessio
     ).first()
     if not member:
         raise HTTPException(status_code=404, detail="Member not found")
-    if not is_boss(current_user):
+    if not is_boss(get_current_user):
         raise HTTPException(status_code=403, detail="Insufficient permissions")
     member.role = role
     db.commit()
