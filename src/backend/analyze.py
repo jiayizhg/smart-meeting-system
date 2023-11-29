@@ -1,5 +1,6 @@
+from datetime import datetime
 from typing import List
-from fastapi import FastAPI, UploadFile, File, HTTPException, APIRouter, HTTPException, Depends
+from fastapi import FastAPI, Request, UploadFile, File, HTTPException, APIRouter, HTTPException, Depends
 from fastapi.responses import JSONResponse
 import cv2
 from flask_cors import cross_origin
@@ -12,6 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import create_engine, Column, Integer, String, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
+from apscheduler.schedulers.background import BackgroundScheduler
 Base = declarative_base()
 
 #Define Database
@@ -20,12 +22,15 @@ class User(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String)
     role = Column(String)
+    is_temporary = Column(bool, default=False)
 
 class MeetingRoom(Base):
     __tablename__ = 'meeting_rooms'
     id = Column(Integer, primary_key=True)
     name = Column(String)
     creator_id = Column(Integer, ForeignKey('users.id'))
+    start_time = Column(datetime)
+    end_time = Column(datetime)
 
 class UserMeetingRoom(Base):
     __tablename__ = 'user_meeting_room'
@@ -70,6 +75,28 @@ def get_current_user(user_id: int, db: Session = Depends(get_db)) -> User:
 def is_boss(user: User) -> bool:
     return user.role == 'boss'
 
+def cleanup_users(db: Session):
+    current_time = datetime.now()
+    ended_meetings = db.query(MeetingRoom).filter(MeetingRoom.end_time < current_time).all()
+    
+    for meeting in ended_meetings:
+        db.query(User).filter(
+            User.id.in_(
+                db.query(UserMeetingRoom.user_id).filter(UserMeetingRoom.meeting_room_id == meeting.id)
+            ),
+            User.is_temporary == True
+        ).delete()
+        db.commit()
+
+def start_scheduler():
+    scheduler = BackgroundScheduler()
+    scheduler.add_job(cleanup_users, 'interval', minutes=5) 
+    scheduler.start()
+
+@app.on_event("startup")
+async def startup_event():
+    start_scheduler()
+
 @app.post("/users/")
 def create_user(name: str, role: str, db: Session = Depends(get_db)):
     db_user = User(name=name, role=role)
@@ -87,12 +114,27 @@ def create_meeting_room(name: str, creator_id: int, db: Session = Depends(get_db
     return db_meeting_room
 
 @app.post("/join_meeting_room/")
-def join_meeting_room(user_id: int, meeting_room_id: int, role: str, db: Session = Depends(get_db)):
+async def join_meeting_room(request: Request, db: Session = Depends(get_db)):
+    data = await request.json()
+    username = data.get("username")
+    meeting_room_id = data.get("meeting_room_id")
+
+    if not username or not meeting_room_id:
+        raise HTTPException(status_code=400, detail="Missing username or meeting room ID")
+    user = db.query(User).filter(User.name == username).first()
+    if not user:
+        user = User(name=username, role="employee", is_temporary=True)
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+    user_id = data.get("user_id")
+    role= data.get("role")
     db_join = UserMeetingRoom(user_id=user_id, meeting_room_id=meeting_room_id, role=role)
     db.add(db_join)
     db.commit()
     db.refresh(db_join)
     return db_join
+
 
 @app.get("/users/", response_model=List[User])
 def get_users(skip: int = 0, limit: int = 10, db: Session = Depends(get_db)):
