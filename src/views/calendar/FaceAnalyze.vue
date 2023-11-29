@@ -174,7 +174,7 @@ export default {
           const formData = new FormData();
           formData.append("file", blob, "frame.jpg");
           try {
-            const response = await axios.post("http://localhost:5000/process_frame", formData, {
+            const response = await axios.post("http://localhost:8000/process_frame", formData, {
               headers: {
                 "Content-Type": "multipart/form-data",
               },
