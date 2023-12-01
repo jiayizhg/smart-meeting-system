@@ -156,6 +156,10 @@ export default {
       }
     },
 
+    sleep(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
+    },
+
     async captureAndSendFrame() {
       const canvas = document.createElement("canvas");
       await this.$nextTick();
@@ -179,9 +183,12 @@ export default {
                 "Content-Type": "multipart/form-data",
               },
             });
+
             console.log("Response:", response.data); 
+            
             this.emotion = response.data.emotion;
             this.eyes_status = response.data.eyes_status;
+            await this.sleep(5000)
           } catch (error) {
             console.error("Error sending frame:", error);
           } finally {
@@ -191,6 +198,7 @@ export default {
         }, "image/jpeg");
       });
     }
+    
   }
 };
 </script>

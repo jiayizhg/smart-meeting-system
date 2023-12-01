@@ -10,37 +10,97 @@ from insightface.app import FaceAnalysis
 import shutil
 import uvicorn
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy import create_engine, Column, Integer, String, ForeignKey
+import asyncio
+from sqlalchemy import create_engine, Column, Integer, String, ForeignKey, Float, DateTime, MetaData, Table, VARCHAR
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
 from apscheduler.schedulers.background import BackgroundScheduler
+from sqlalchemy import create_engine, Column, Integer, Float, DateTime, PrimaryKeyConstraint
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.sql import func
 Base = declarative_base()
 
-#Define Database
-class User(Base):
-    __tablename__ = 'users'
-    id = Column(Integer, primary_key=True)
-    name = Column(String)
-    role = Column(String)
-    is_temporary = Column(bool, default=False)
-
-class MeetingRoom(Base):
-    __tablename__ = 'meeting_rooms'
-    id = Column(Integer, primary_key=True)
-    name = Column(String)
-    creator_id = Column(Integer, ForeignKey('users.id'))
-    start_time = Column(datetime)
-    end_time = Column(datetime)
-
-class UserMeetingRoom(Base):
-    __tablename__ = 'user_meeting_room'
-    user_id = Column(Integer, ForeignKey('users.id'), primary_key=True)
-    meeting_room_id = Column(Integer, ForeignKey('meeting_rooms.id'), primary_key=True)
-    role = Column(String)
 
 
-engine = create_engine('postgresql://aaa:111@localhost/mydb')
+
+
+
+engine = create_engine('mysql+pymysql://root:admin@localhost:3306/meeting_db')
+print(engine)
+
+Base = declarative_base()
+
+
+class UserEmotionData(Base):
+    __tablename__ = 'user_emotion_data'
+
+    id = Column(Integer, primary_key=True, autoincrement=True, nullable=False)
+    user_id = Column(Integer, nullable=False)
+    angry = Column(Float, nullable=False)
+    disgust = Column(Float, nullable=False)
+    fear = Column(Float, nullable=False)
+    happy = Column(Float, nullable=False)
+    sad = Column(Float, nullable=False)
+    surprise = Column(Float, nullable=False)
+    neutral = Column(Float, nullable=False)
+    emotion_result = Column(VARCHAR(50), nullable=True)
+    update_time = Column(DateTime, server_default=func.now(), onupdate=func.now())
+
+    __table_args__ = (
+        PrimaryKeyConstraint('id', name='user_emotion_data_pk'),
+    )
+
+Base.metadata.create_all(bind=engine)
+
+
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+db = SessionLocal()
+
+
+# new_user_data = UserEmotionData(
+#     angry=0.1,
+#     disgust=0.2,
+#     fear=0.3,
+#     happy=0.4,
+#     sad=0.5,
+#     surprise=0.6,
+#     neutral=0.7,
+#     emotion_result=0.8
+# )
+
+# db.add(new_user_data)
+# db.commit()
+
+# # 关闭会话
+# db.close()
+
+
+#Define Database
+# class User(Base):
+#     __tablename__ = 'users'
+#     id = Column(Integer, primary_key=True)
+#     name = Column(String)
+#     role = Column(String)
+#     is_temporary = Column(bool, default=False)
+
+# class MeetingRoom(Base):
+#     __tablename__ = 'meeting_rooms'
+#     id = Column(Integer, primary_key=True)
+#     name = Column(String)
+#     creator_id = Column(Integer, ForeignKey('users.id'))
+#     start_time = Column(datetime)
+#     end_time = Column(datetime)
+
+# class UserMeetingRoom(Base):
+#     __tablename__ = 'user_meeting_room'
+#     user_id = Column(Integer, ForeignKey('users.id'), primary_key=True)
+#     meeting_room_id = Column(Integer, ForeignKey('meeting_rooms.id'), primary_key=True)
+#     role = Column(String)
+
+
+# engine = create_engine('postgresql://aaa:111@localhost/mydb')
+# SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
 
 app = FastAPI()
 app.add_middleware(
@@ -50,120 +110,122 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-#Meeting Part
-@app.on_event("startup")
-def on_startup():
-    Base.metadata.create_all(engine)
+# #Meeting Part
+# @app.on_event("startup")
+# def on_startup():
+#     Base.metadata.create_all(engine)
 
-@app.on_event("shutdown")
-def on_shutdown():
-    Base.metadata.drop_all(engine)
+# @app.on_event("shutdown")
+# def on_shutdown():
+#     Base.metadata.drop_all(engine)
 
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
-def get_current_user(user_id: int, db: Session = Depends(get_db)) -> User:
-    user = db.query(User).filter(User.id == user_id).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    return user
+# def get_db():
+#     db = SessionLocal()
+#     try:
+#         yield db
+#     finally:
+#         db.close()
 
-def is_boss(user: User) -> bool:
-    return user.role == 'boss'
+# def get_current_user(user_id: int, db: Session = Depends(get_db)) -> User:
+#     user = db.query(User).filter(User.id == user_id).first()
+#     if not user:
+#         raise HTTPException(status_code=404, detail="User not found")
+#     return user
 
-def cleanup_users(db: Session):
-    current_time = datetime.now()
-    ended_meetings = db.query(MeetingRoom).filter(MeetingRoom.end_time < current_time).all()
+# def is_boss(user: User) -> bool:
+#     return user.role == 'boss'
+
+# def cleanup_users(db: Session):
+#     current_time = datetime.now()
+#     ended_meetings = db.query(MeetingRoom).filter(MeetingRoom.end_time < current_time).all()
     
-    for meeting in ended_meetings:
-        db.query(User).filter(
-            User.id.in_(
-                db.query(UserMeetingRoom.user_id).filter(UserMeetingRoom.meeting_room_id == meeting.id)
-            ),
-            User.is_temporary == True
-        ).delete()
-        db.commit()
+#     for meeting in ended_meetings:
+#         db.query(User).filter(
+#             User.id.in_(
+#                 db.query(UserMeetingRoom.user_id).filter(UserMeetingRoom.meeting_room_id == meeting.id)
+#             ),
+#             User.is_temporary == True
+#         ).delete()
+#         db.commit()
 
-def start_scheduler():
-    scheduler = BackgroundScheduler()
-    scheduler.add_job(cleanup_users, 'interval', minutes=5) 
-    scheduler.start()
+# # def start_scheduler():
+# #     scheduler = BackgroundScheduler()
+# #     scheduler.add_job(cleanup_users, 'interval', minutes=5) 
+# #     scheduler.start()
 
-@app.on_event("startup")
-async def startup_event():
-    start_scheduler()
+# @app.on_event("startup")
+# async def startup_event():
+#     start_scheduler()
 
-@app.post("/users/")
-def create_user(name: str, role: str, db: Session = Depends(get_db)):
-    db_user = User(name=name, role=role)
-    db.add(db_user)
-    db.commit()
-    db.refresh(db_user)
-    return db_user
+# @app.post("/users/")
+# def create_user(name: str, role: str, db: Session = Depends(get_db)):
+#     db_user = User(name=name, role=role)
+#     db.add(db_user)
+#     db.commit()
+#     db.refresh(db_user)
+#     return db_user
 
-@app.post("/meeting_rooms/")
-def create_meeting_room(name: str, creator_id: int, db: Session = Depends(get_db)):
-    db_meeting_room = MeetingRoom(name=name, creator_id=creator_id)
-    db.add(db_meeting_room)
-    db.commit()
-    db.refresh(db_meeting_room)
-    return db_meeting_room
+# @app.post("/meeting_rooms/")
+# def create_meeting_room(name: str, creator_id: int, db: Session = Depends(get_db)):
+#     db_meeting_room = MeetingRoom(name=name, creator_id=creator_id)
+#     db.add(db_meeting_room)
+#     db.commit()
+#     db.refresh(db_meeting_room)
+#     return db_meeting_room
 
-@app.post("/join_meeting_room/")
-async def join_meeting_room(request: Request, db: Session = Depends(get_db)):
-    data = await request.json()
-    username = data.get("username")
-    meeting_room_id = data.get("meeting_room_id")
+# @app.post("/join_meeting_room/")
+# async def join_meeting_room(request: Request, db: Session = Depends(get_db)):
+#     data = await request.json()
+#     username = data.get("username")
+#     meeting_room_id = data.get("meeting_room_id")
 
-    if not username or not meeting_room_id:
-        raise HTTPException(status_code=400, detail="Missing username or meeting room ID")
-    user = db.query(User).filter(User.name == username).first()
-    if not user:
-        user = User(name=username, role="employee", is_temporary=True)
-        db.add(user)
-        db.commit()
-        db.refresh(user)
-    user_id = data.get("user_id")
-    role= data.get("role")
-    db_join = UserMeetingRoom(user_id=user_id, meeting_room_id=meeting_room_id, role=role)
-    db.add(db_join)
-    db.commit()
-    db.refresh(db_join)
-    return db_join
+#     if not username or not meeting_room_id:
+#         raise HTTPException(status_code=400, detail="Missing username or meeting room ID")
+#     user = db.query(User).filter(User.name == username).first()
+#     if not user:
+#         user = User(name=username, role="employee", is_temporary=True)
+#         db.add(user)
+#         db.commit()
+#         db.refresh(user)
+#     user_id = data.get("user_id")
+#     role= data.get("role")
+#     db_join = UserMeetingRoom(user_id=user_id, meeting_room_id=meeting_room_id, role=role)
+#     db.add(db_join)
+#     db.commit()
+#     db.refresh(db_join)
+#     return db_join
 
 
-@app.get("/users/", response_model=List[User])
-def get_users(skip: int = 0, limit: int = 10, db: Session = Depends(get_db)):
-    users = db.query(User).offset(skip).limit(limit).all()
-    return users
+# @app.get("/users/", response_model=List[User])
+# def get_users(skip: int = 0, limit: int = 10, db: Session = Depends(get_db)):
+#     users = db.query(User).offset(skip).limit(limit).all()
+#     return users
 
-@app.get("/meeting_rooms/", response_model=List[MeetingRoom])
-def get_meeting_rooms(skip: int = 0, limit: int = 10, db: Session = Depends(get_db)):
-    meeting_rooms = db.query(MeetingRoom).offset(skip).limit(limit).all()
-    return meeting_rooms
+# @app.get("/meeting_rooms/", response_model=List[MeetingRoom])
+# def get_meeting_rooms(skip: int = 0, limit: int = 10, db: Session = Depends(get_db)):
+#     meeting_rooms = db.query(MeetingRoom).offset(skip).limit(limit).all()
+#     return meeting_rooms
 
-@app.get("/meeting_room_members/{meeting_room_id}", response_model=List[UserMeetingRoom])
-def get_meeting_room_members(meeting_room_id: int, db: Session = Depends(get_db)):
-    members = db.query(UserMeetingRoom).filter(UserMeetingRoom.meeting_room_id == meeting_room_id).all()
-    return members
+# @app.get("/meeting_room_members/{meeting_room_id}", response_model=List[UserMeetingRoom])
+# def get_meeting_room_members(meeting_room_id: int, db: Session = Depends(get_db)):
+#     members = db.query(UserMeetingRoom).filter(UserMeetingRoom.meeting_room_id == meeting_room_id).all()
+#     return members
 
-@app.put("/update_meeting_room_member/")
-def update_member_role(user_id: int, meeting_room_id: int, role: str, db: Session = Depends(get_current_user)):
-    member = db.query(UserMeetingRoom).filter(
-        UserMeetingRoom.user_id == user_id, 
-        UserMeetingRoom.meeting_room_id == meeting_room_id
-    ).first()
-    if not member:
-        raise HTTPException(status_code=404, detail="Member not found")
-    if not is_boss(get_current_user):
-        raise HTTPException(status_code=403, detail="Insufficient permissions")
-    member.role = role
-    db.commit()
-    return member
+# @app.put("/update_meeting_room_member/")
+# def update_member_role(user_id: int, meeting_room_id: int, role: str, db: Session = Depends(get_current_user)):
+#     member = db.query(UserMeetingRoom).filter(
+#         UserMeetingRoom.user_id == user_id, 
+#         UserMeetingRoom.meeting_room_id == meeting_room_id
+#     ).first()
+#     if not member:
+#         raise HTTPException(status_code=404, detail="Member not found")
+#     if not is_boss(get_current_user):
+#         raise HTTPException(status_code=403, detail="Insufficient permissions")
+#     member.role = role
+#     db.commit()
+#     return member
+
 
 #Facial Part
 app_analysis = FaceAnalysis(allowed_modules=['detection', 'landmark_2d_106'])
@@ -181,18 +243,18 @@ def is_eye_closed(eye_points, left_point, right_point):
 async def process_frame(file_path: str):
     emotion_results = DeepFace.analyze(img_path=file_path, actions=['emotion'], enforce_detection=False)
     frame = cv2.imread(file_path)
-    faces = app_analysis.get(frame)
+    # faces = app_analysis.get(frame)
     eyes_status = {"left_eye": "open", "right_eye": "open"}
-    for face in faces:
-            lmk = face.landmark_2d_106
-            lmk = np.round(lmk).astype(np.int)
-            left_eye = np.append(lmk[33:43], [lmk[75]], axis=0)
-            right_eye = np.append(lmk[87:97], [lmk[81]], axis=0)
+    # for face in faces:
+    #         lmk = face.landmark_2d_106
+    #         lmk = np.round(lmk).astype(np.int)
+    #         left_eye = np.append(lmk[33:43], [lmk[75]], axis=0)
+    #         right_eye = np.append(lmk[87:97], [lmk[81]], axis=0)
 
-            if is_eye_closed(left_eye, left_eye[2], left_eye[10]):
-                eyes_status["left_eye"] = "closed"
-            if is_eye_closed(right_eye, right_eye[6], right_eye[10]):
-                eyes_status["right_eye"] = "closed"
+    #         if is_eye_closed(left_eye, left_eye[2], left_eye[10]):
+    #             eyes_status["left_eye"] = "closed"
+    #         if is_eye_closed(right_eye, right_eye[6], right_eye[10]):
+    #             eyes_status["right_eye"] = "closed"
     response_data = {
         "emotion": emotion_results[0]['emotion'],
         "eyes_status": eyes_status
@@ -208,9 +270,47 @@ async def upload_file(file: UploadFile = File(...)):
             shutil.copyfileobj(file.file, buffer)
 
         result = await process_frame(temp_path)
+        print(result)
+
+        angry_value = result['emotion']['angry']
+        disgust_value = result['emotion']['disgust']
+        fear_value = result['emotion']['fear']
+        happy_value = result['emotion']['happy']
+        sad_value = result['emotion']['sad']
+        surprise_value = result['emotion']['surprise']
+        neutral_value = result['emotion']['neutral']
+
+        # for d_data in result['emotion']:
+        #     print(d_data)
+        e_res = max(zip(result['emotion'].values(),result['emotion'].keys()))[1]
+
+        insert_user_emotion_data(db, 1, angry_value,disgust_value, fear_value,happy_value, sad_value, surprise_value, neutral_value, e_res)
+
         return JSONResponse(content=result)
     except Exception as e:
+        print(e)
         raise HTTPException(status_code=500, detail=str(e))
+
+
+#Insert emotion to db
+def insert_user_emotion_data(db, user_id ,angry, disgust, fear, happy, sad, surprise, neutral, emotion_result):
+    new_user_data = UserEmotionData(
+        user_id = user_id,
+        angry=angry,
+        disgust=disgust,
+        fear=fear,
+        happy=happy,
+        sad=sad,
+        surprise=surprise,
+        neutral=neutral,
+        emotion_result=emotion_result
+    )
+    try:
+        db.add(new_user_data)
+        db.commit()
+    except Exception as e:
+        print(e)
+
 
 if __name__ == "__main__":
 
