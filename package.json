@@ -26,17 +26,30 @@
     "lint": "vue-cli-service lint"
   },
   "dependencies": {
+    "@fortawesome/fontawesome-svg-core": "^6.4.2",
+    "@fortawesome/free-solid-svg-icons": "^6.4.2",
+    "@fortawesome/vue-fontawesome": "^2.0.10",
+    "@snappywc/calendar": "^1.0.6",
+    "@syncfusion/ej2-vue-schedule": "^23.2.4",
     "@zoomus/websdk": "^2.16.0",
     "axios": "^0.21.2",
+    "bootstrap": "^5.3.2",
+    "bootstrap-vue": "^2.23.1",
     "core-js": "^3.6.5",
     "cors": "^2.8.5",
+    "devextreme": "23.1.6",
+    "devextreme-vue": "23.1.6",
     "gapi-client": "^0.0.3",
     "is-svg": "^4.2.2",
     "moment": "^2.29.4",
+    "pinia": "^2.1.7",
     "postcss": "^8.2.10",
     "vue": "^2.6.12",
     "vue-axios-cors": "^1.0.1",
-    "vue-router": "^3.5.0"
+    "vue-router": "^3.5.0",
+    "vue-simple-calendar": "^4.3.2",
+    "vue2-simple-calendar": "^1.0.8",
+    "whatwg-fetch": "^3.6.19"
   },
   "devDependencies": {
     "@vue/cli-plugin-babel": "~4.5.15",
@@ -45,7 +58,7 @@
     "babel-eslint": "^10.1.0",
     "eslint": "^6.7.2",
     "eslint-plugin-vue": "^6.2.2",
-    "vue-template-compiler": "^2.6.11"
+    "vue-template-compiler": "^2.6.12"
   },
   "eslintConfig": {
     "root": true,

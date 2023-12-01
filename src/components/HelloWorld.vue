@@ -1,6 +1,5 @@
 <template>
   <main>
-    <h1>Smart Meeting System</h1>
     <button @click="getSignature">Join Meeting</button>
   </main>
 </template>
@@ -28,8 +27,8 @@ export default {
     return {
       authEndpoint: "http://localhost:4000",
       sdkKey: "u8To97SrT22clDxYXkHd0w",
-      meetingNumber: "82433094380",
-      passWord: "fDGQ69",
+      meetingNumber: "85169167502",
+      passWord: "G6enE7",
       role: 0,
       userName: "Owen",
       userEmail: "owen@gmail.com",
