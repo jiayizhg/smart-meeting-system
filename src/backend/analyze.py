@@ -23,14 +23,17 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from sqlalchemy import create_engine, Column, Integer, Float, DateTime, PrimaryKeyConstraint
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.sql import func
+from urllib.parse import quote_plus
 Base = declarative_base()
 
 
+raw_password = ""
+encoded_password = quote_plus(raw_password)
+connection_string = f"mysql+pymysql://root:{encoded_password}@localhost:3306/meeting_db"
 
 
 
-
-engine = create_engine('mysql+pymysql://root:admin@localhost:3306/meeting_db')
+engine = create_engine(connection_string)
 print(engine)
 
 Base = declarative_base()
@@ -268,12 +271,13 @@ def calculate_eye_aspect_ratio(landmarks, eye_indices):
 
 def get_eye_landmarks(frame):
     frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-    results = face_mesh.process(frame_rgb)
+    results = face_mesh.process(frame)
     landmarks = []
     if results.multi_face_landmarks:
         for landmark in results.multi_face_landmarks[0].landmark: 
             x, y = int(landmark.x * frame.shape[1]), int(landmark.y * frame.shape[0])
             landmarks.append((x, y))
+    
 
     LEFT_EYE_INDICES = [33, 133, 160, 144, 145, 153, 154, 155]
     RIGHT_EYE_INDICES = [362, 263, 466, 388, 387, 386, 385, 384]
@@ -295,6 +299,7 @@ def get_eye_landmarks(frame):
 
 def is_left_eye_closed(landmarks, threshold=0.15):
     left_ear = calculate_eye_aspect_ratio(landmarks, LEFT_EYE_INDICES)
+    print(left_ear)
     return left_ear < threshold
 
 def is_right_eye_closed(landmarks, threshold=0.15):
@@ -305,42 +310,48 @@ def get_eye_direction(cropped_eye):
     gray_eye = cv2.cvtColor(cropped_eye, cv2.COLOR_BGR2GRAY)
     blurred_eye = cv2.GaussianBlur(gray_eye, (7, 7), 0)
     _, threshold_eye = cv2.threshold(blurred_eye, 30, 255, cv2.THRESH_BINARY_INV)
-    contours, _ = cv2.findContours(threshold_eye, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-
-    if contours:
-        contour = max(contours, key=cv2.contourArea)
-        (x, y, w, h) = cv2.boundingRect(contour)
-        if x + w/2 < cropped_eye.shape[1]/3:
-            return "LEFT"
-        elif x + w/2 > cropped_eye.shape[1]*2/3:
-            return "RIGHT"
-        else:
-            return "CENTER"
+    h, w = threshold_eye.shape
+    side_piece_width = int(w / 3)
+    center_piece_width = w - 2 * side_piece_width
+    left_piece = threshold_eye[0:h, 0:side_piece_width]
+    center_piece = threshold_eye[0:h, side_piece_width:side_piece_width + center_piece_width]
+    right_piece = threshold_eye[0:h, side_piece_width + center_piece_width:w]
+    left_part = np.sum(left_piece == 0)
+    center_part = np.sum(center_piece == 0)
+    right_part = np.sum(right_piece == 0)
+    eye_parts = [left_part, center_part, right_part]
+    max_index = eye_parts.index(max(eye_parts))
+    if max_index == 0:
+        return "left"
+    elif max_index == 1:
+        return "center"
+    elif max_index == 2:
+        return "right"
     else:
-        return "UNKNOWN"
-    
+        return "missing"
 
 
 async def process_frame(file_path: str):
     emotion_results = DeepFace.analyze(img_path=file_path, actions=['emotion'], enforce_detection=False)
     frame = cv2.imread(file_path)
     # faces = app_analysis.get(frame)
-    eyes_status = {"left_eye": "open", "right_eye": "open", "left_eye_direction": "CENTER", "right_eye_direction": "CENTER"}
+    eyes_status = {"left_eye": "open", "right_eye": "open", "left_eye_direction": "center", "right_eye_direction": "center"}
     landmarks, cropped_left_eye, cropped_right_eye = get_eye_landmarks(frame)
+    print(len(landmarks))
+    print(len(cropped_left_eye))
+    print(len(cropped_right_eye))
+    if len(landmarks) < max(LEFT_EYE_INDICES) + 1:
+        eyes_status= {"left_eye": "closed", "right_eye": "closed", "left_eye_direction": "missing", "right_eye_direction": "missing"}
+        response_data = {
+            "emotion": emotion_results[0]['emotion'],
+            "eyes_status": eyes_status
+        }
+        return response_data
+    
     eyes_status["left_eye"] = "closed" if is_left_eye_closed(landmarks) else "open"
     eyes_status["right_eye"] = "closed" if is_right_eye_closed(landmarks) else "open"
     eyes_status["left_eye_direction"] = get_eye_direction(cropped_left_eye)
     eyes_status["right_eye_direction"] = get_eye_direction(cropped_right_eye)
-    # for face in faces:
-    #         lmk = face.landmark_2d_106
-    #         lmk = np.round(lmk).astype(np.int)
-    #         left_eye = np.append(lmk[33:43], [lmk[75]], axis=0)
-    #         right_eye = np.append(lmk[87:97], [lmk[81]], axis=0)
-
-    #         if is_eye_closed(left_eye, left_eye[2], left_eye[10]):
-    #             eyes_status["left_eye"] = "closed"
-    #         if is_eye_closed(right_eye, right_eye[6], right_eye[10]):
-    #             eyes_status["right_eye"] = "closed"
     response_data = {
         "emotion": emotion_results[0]['emotion'],
         "eyes_status": eyes_status
