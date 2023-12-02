@@ -3,6 +3,7 @@ from typing import List
 from fastapi import FastAPI, Request, UploadFile, File, HTTPException, APIRouter, HTTPException, Depends
 from fastapi.responses import JSONResponse
 import cv2
+import json
 from flask_cors import cross_origin
 import numpy as np
 from deepface import DeepFace
@@ -50,11 +51,26 @@ class UserEmotionData(Base):
         PrimaryKeyConstraint('id', name='user_emotion_data_pk'),
     )
 
+
+class UserDistractedData(Base):
+    __tablename__ = 'user_distracted_data'
+
+    id = Column(Integer, primary_key=True, autoincrement=True, nullable=False)
+    user_id = Column(Integer, nullable=False)
+    distracted_result = Column(VARCHAR(100), nullable=False)
+    update_time = Column(DateTime, server_default=func.now(), onupdate=func.now())
+    __table_args__ = (
+        PrimaryKeyConstraint('id', name='user_distracted_data_pk'),
+    )
+    
+
+
 Base.metadata.create_all(bind=engine)
 
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 db = SessionLocal()
+
 
 
 # new_user_data = UserEmotionData(
@@ -296,6 +312,22 @@ async def upload_file(file: UploadFile = File(...)):
 def get_user_emotion_statistics_data(user_id: int):
     return get_user_emotion_statistics(user_id)
 
+@app.get("/get_user_emotion_data/{user_id}/{emotion_type}/{start_date}/{end_date}", response_model=list)
+def get_user_emotion(user_id: int, emotion_type: str, start_date: datetime, end_date: datetime):
+    return get_user_emotion_data(user_id, emotion_type, start_date, end_date)
+
+
+@app.get("/get_distraction_data/{user_id}",response_model=list)
+def get_user_distraction(user_id:int):
+    return get_user_distraction_data(user_id)
+
+
+#return distraction_type count (int)
+#distraction type:  Yawning , Talking , Eyes look elsewhere , Drowsiness , Sleeping , Looking at another direction
+@app.get("/get_distraction_count/{user_id}/{distraction_type}/{start_date}/{end_date}", response_model=int)
+def get_user_distraction_count(user_id: int, distraction_type: str, start_date: datetime, end_date: datetime):
+    print(get_user_distraction_type_count(user_id, distraction_type, start_date, end_date))
+    return get_user_distraction_type_count(user_id, distraction_type, start_date, end_date)
 
 #get user statistics data using user_id from db
 def get_user_emotion_statistics(user_id: int):
@@ -336,13 +368,9 @@ def get_user_emotion_statistics(user_id: int):
     except Exception as e:
         print(e)
 
-@app.get("/get_user_emotion_data/{user_id}/{emotion_type}/{start_date}/{end_date}", response_model=list)
-def get_user_emotion(user_id: int, emotion_type: str, start_date: datetime, end_date: datetime):
-    return get_user_emotion_data(user_id, emotion_type, start_date, end_date)
 
-
+#get user emotion data using id, type, start time and end time
 def get_user_emotion_data(user_id: int, emotion_type: str, start_date: datetime, end_date: datetime):
-
     try:
         if emotion_type not in UserEmotionData.__table__.columns:
             raise HTTPException(status_code=400, detail=f"Invalid emotion_type: {emotion_type}")
@@ -354,7 +382,6 @@ def get_user_emotion_data(user_id: int, emotion_type: str, start_date: datetime,
             UserEmotionData.update_time <= end_date
         ]
 
-        # 查询数据库
         result = (
             db.query(UserEmotionData)
             .filter(*query_conditions)
@@ -380,6 +407,46 @@ def get_user_emotion_data(user_id: int, emotion_type: str, start_date: datetime,
         print(e)
 
 
+#get user distracted data using id
+def get_user_distraction_data(user_id: int):
+    try:
+        result = (
+            db.query(UserDistractedData)
+            .filter(UserDistractedData.user_id == user_id)
+            .order_by(UserDistractedData.update_time.desc())
+            .all()
+        )
+        
+        formatted_results = [
+            {
+                'distracted_result': entry.distracted_result,
+                'update_time':entry.update_time
+
+            }
+            for entry in result
+        ]
+        return formatted_results
+    
+    except Exception as e:
+        print(e)
+
+
+#get distracted count using id ,distracted_type, start time and end time
+def get_user_distraction_type_count(user_id: int, distracted_result: str, start_date: datetime, end_date: datetime):
+    count =  (
+        db.query(func.count(UserDistractedData.distracted_result))
+        .filter(
+            UserDistractedData.user_id == user_id,
+            UserDistractedData.distracted_result == distracted_result,
+            UserDistractedData.update_time >= start_date,
+            UserDistractedData.update_time <= end_date
+        )
+        .scalar()
+    )
+    return count
+
+
+
 #Insert emotion to db
 def insert_user_emotion_data(db, user_id ,angry, disgust, fear, happy, sad, surprise, neutral, emotion_result):
     new_user_data = UserEmotionData(
@@ -399,6 +466,22 @@ def insert_user_emotion_data(db, user_id ,angry, disgust, fear, happy, sad, surp
     except Exception as e:
         print(e)
 
+
+#Insert distracted data to distracted table
+def insert_user_distracted_data(db, user_id,distracted_result):
+    #Test 
+    test_distracted_data = UserDistractedData(
+    user_id = user_id,
+    distracted_result = distracted_result
+    )
+    try:        
+        db.add(test_distracted_data)
+        db.commit()
+    except Exception as e:
+        print(e)
+
+print(get_user_distraction_data(1))
+print(get_user_distraction_type_count(2,'Normal','2023-11-30T12:23:23','2023-12-02T12:23:23'))
 
 if __name__ == "__main__":
 
