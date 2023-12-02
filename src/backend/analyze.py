@@ -293,12 +293,12 @@ async def upload_file(file: UploadFile = File(...)):
 
 
 @app.get("/get_emotion_statistics/{user_id}", response_model=dict)
-def read_user_emotion_data(user_id: int):
-    return get_user_emotion_data(user_id)
+def get_user_emotion_statistics_data(user_id: int):
+    return get_user_emotion_statistics(user_id)
 
 
 #get user statistics data using user_id from db
-def get_user_emotion_data(user_id: int):
+def get_user_emotion_statistics(user_id: int):
     try:
         result = (
             db.query(
@@ -337,9 +337,8 @@ def get_user_emotion_data(user_id: int):
         print(e)
 
 @app.get("/get_user_emotion_data/{user_id}/{emotion_type}/{start_date}/{end_date}", response_model=list)
-def read_user_emotion_data(user_id: int, emotion_type: str, start_date: datetime, end_date: datetime):
+def get_user_emotion(user_id: int, emotion_type: str, start_date: datetime, end_date: datetime):
     return get_user_emotion_data(user_id, emotion_type, start_date, end_date)
-
 
 
 def get_user_emotion_data(user_id: int, emotion_type: str, start_date: datetime, end_date: datetime):
