@@ -100,7 +100,7 @@
       </div>
       <div class="calendar-parent">
         <calendar-view
-          :events="[...jsonData1,...jsonData2]"
+          :events="[...jsonData1,...jsonDatas.flat()]"
           :show-date="showDate"
           :time-format-options="{ hour: 'numeric', minute: '2-digit' }"
           :enable-drag-drop="true"
@@ -254,7 +254,11 @@
           jsonData2: {
             type: Object,
             required: true
-          }
+          },
+          jsonDatas: {
+          type: Array,
+          required: true
+    }
 
         
         },

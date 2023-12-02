@@ -15,7 +15,7 @@
 
 
 
-    <calendar :authorized="authorized" :events="events" :jsonData1="jsonData1" :jsonData2="jsonData2"/> 
+    <calendar :authorized="authorized" :events="events" :jsonData1="jsonData1" :jsonDatas="jsonDatas"/> 
     </div>
 
 
@@ -55,7 +55,8 @@
                 items: undefined,
                 events: [],
                 jsonData1:[],
-                jsonData2:[]
+                jsonData2:[],
+                jsonDatas:[]
                 
             };
         }, 
@@ -258,6 +259,12 @@
             
             this.jsonData2 = JSON.parse(JSON.stringify(resultA))
             console.log(this.jsonData2)
+            this.jsonData2.push({ user_email: email});
+            this.jsonDatas.push(this.jsonData2);
+            console.log(this.jsonDatas)
+            // this.word = [];
+
+            
             // "2023-12-17T11:42:00-05:00", 
             // yyyy-mm-dd HH:MM:SS
         });
