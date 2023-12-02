@@ -292,6 +292,95 @@ async def upload_file(file: UploadFile = File(...)):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@app.get("/get_emotion_statistics/{user_id}", response_model=dict)
+def read_user_emotion_data(user_id: int):
+    return get_user_emotion_data(user_id)
+
+
+#get user statistics data using user_id from db
+def get_user_emotion_data(user_id: int):
+    try:
+        result = (
+            db.query(
+                func.avg(UserEmotionData.angry).label('avg_angry'),
+                func.avg(UserEmotionData.disgust).label('avg_disgust'),
+                func.avg(UserEmotionData.fear).label('avg_fear'),
+                func.avg(UserEmotionData.happy).label('avg_happy'),
+                func.avg(UserEmotionData.sad).label('avg_sad'),
+                func.avg(UserEmotionData.surprise).label('avg_surprise'),
+                func.avg(UserEmotionData.neutral).label('avg_neutral')
+            )
+            .filter(UserEmotionData.user_id == user_id)
+            .one_or_none()
+        )
+
+        if not result:
+            raise HTTPException(status_code=404, detail="User not found")
+
+        avg_angry = result.avg_angry
+        avg_disgust = result.avg_disgust
+        avg_fear = result.avg_fear
+        avg_happy = result.avg_happy
+        avg_sad = result.avg_sad
+        avg_surprise = result.avg_surprise
+        avg_neutral = result.avg_neutral
+
+        return {'avg_angry': avg_angry, 
+                'avg_disgust': avg_disgust, 
+                'avg_fear':avg_fear, 
+                'avg_happy':avg_happy, 
+                'avg_sad':avg_sad, 
+                'avg_surprise':avg_surprise,
+                'avg_neutral':avg_neutral}
+
+    except Exception as e:
+        print(e)
+
+@app.get("/get_user_emotion_data/{user_id}/{emotion_type}/{start_date}/{end_date}", response_model=list)
+def read_user_emotion_data(user_id: int, emotion_type: str, start_date: datetime, end_date: datetime):
+    return get_user_emotion_data(user_id, emotion_type, start_date, end_date)
+
+
+
+def get_user_emotion_data(user_id: int, emotion_type: str, start_date: datetime, end_date: datetime):
+
+    try:
+        if emotion_type not in UserEmotionData.__table__.columns:
+            raise HTTPException(status_code=400, detail=f"Invalid emotion_type: {emotion_type}")
+
+        query_conditions = [
+            UserEmotionData.user_id == user_id,
+            getattr(UserEmotionData, emotion_type) is not None,
+            UserEmotionData.update_time >= start_date,
+            UserEmotionData.update_time <= end_date
+        ]
+
+        # 查询数据库
+        result = (
+            db.query(UserEmotionData)
+            .filter(*query_conditions)
+            .order_by(UserEmotionData.update_time)
+            .all()
+        )
+
+        if not result:
+            raise HTTPException(status_code=404, detail="Data not found")
+        print(result)
+
+        formatted_results = [
+            {
+                'emotion_data': "{:.6f}".format(getattr(entry, emotion_type)),
+                'update_time': entry.update_time
+            }
+            for entry in result
+        ]
+
+        return formatted_results
+    
+    except Exception as e:
+        print(e)
+
+
 #Insert emotion to db
 def insert_user_emotion_data(db, user_id ,angry, disgust, fear, happy, sad, surprise, neutral, emotion_result):
     new_user_data = UserEmotionData(
