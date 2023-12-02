@@ -11,6 +11,14 @@
   <div>
     <input type="number" v-model="duration" placeholder="Enter your Time Duration" />
     <button @click="submitDuration">Submit</button>
+
+    <div>
+    <ul>
+      <li v-for="item in optimizedTimes" :key="item.start">{{ item.start }} - {{ item.end }}</li>
+    </ul>
+  </div>
+
+    
   </div>
 
 
@@ -56,7 +64,9 @@
                 events: [],
                 jsonData1:[],
                 jsonData2:[],
-                jsonDatas:[]
+                jsonDatas:[],
+                optimizedTimes:[]
+
                 
             };
         }, 
@@ -303,15 +313,12 @@
   console.log(availableSlots);
  
   // Find the 3 most optimized meeting times
-  const optimizedTimes = availableSlots
+  this.optimizedTimes = availableSlots
   .filter(slot => ((new Date(slot.end) - new Date(slot.start)) / 60000 >= duration))
   .slice(0, 3);
   console.log(optimizedTimes);
-
-
-    
- 
   return optimizedTimes;
+  
 },
 
 
