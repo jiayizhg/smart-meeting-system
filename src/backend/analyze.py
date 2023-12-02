@@ -16,7 +16,7 @@ import shutil
 import uvicorn
 from fastapi.middleware.cors import CORSMiddleware
 import asyncio
-from sqlalchemy import create_engine, Column, Integer, String, ForeignKey, Float, DateTime, MetaData, Table, VARCHAR
+from sqlalchemy import create_engine, Column, Integer, String, ForeignKey, Float, DateTime, MetaData, Table, VARCHAR, text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
 from apscheduler.schedulers.background import BackgroundScheduler
@@ -29,11 +29,19 @@ Base = declarative_base()
 
 raw_password = ""
 encoded_password = quote_plus(raw_password)
-connection_string = f"mysql+pymysql://root:{encoded_password}@localhost:3306/meeting_db"
+# connection_string = f"mysql+pymysql://root:{encoded_password}@localhost:3306/meeting_db"
+# engine = create_engine(connection_string)
+
+server_connection_string = f"mysql+pymysql://root:{encoded_password}@localhost:3306/"
+engine = create_engine(server_connection_string)
+
+with engine.connect() as connection:
+    connection.execute(text("CREATE DATABASE IF NOT EXISTS meeting_db"))
+database_connection_string = f"mysql+pymysql://root:{encoded_password}@localhost:3306/meeting_db"
+engine.dispose()
+engine = create_engine(database_connection_string)
 
 
-
-engine = create_engine(connection_string)
 print(engine)
 
 Base = declarative_base()
@@ -299,7 +307,6 @@ def get_eye_landmarks(frame):
 
 def is_left_eye_closed(landmarks, threshold=0.15):
     left_ear = calculate_eye_aspect_ratio(landmarks, LEFT_EYE_INDICES)
-    print(left_ear)
     return left_ear < threshold
 
 def is_right_eye_closed(landmarks, threshold=0.15):
@@ -337,9 +344,6 @@ async def process_frame(file_path: str):
     # faces = app_analysis.get(frame)
     eyes_status = {"left_eye": "open", "right_eye": "open", "left_eye_direction": "center", "right_eye_direction": "center"}
     landmarks, cropped_left_eye, cropped_right_eye = get_eye_landmarks(frame)
-    print(len(landmarks))
-    print(len(cropped_left_eye))
-    print(len(cropped_right_eye))
     if len(landmarks) < max(LEFT_EYE_INDICES) + 1:
         eyes_status= {"left_eye": "closed", "right_eye": "closed", "left_eye_direction": "missing", "right_eye_direction": "missing"}
         response_data = {
