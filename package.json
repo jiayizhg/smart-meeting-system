@@ -42,6 +42,7 @@
     "gapi-client": "^0.0.3",
     "is-svg": "^4.2.2",
     "moment": "^2.29.4",
+    "moment-timezone": "^0.5.43",
     "pinia": "^2.1.7",
     "postcss": "^8.2.10",
     "vue": "^2.6.12",

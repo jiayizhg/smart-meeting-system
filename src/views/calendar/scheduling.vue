@@ -18,6 +18,28 @@
     </ul>
   </div>
 
+  <div>
+    <h3>Create Google Calendar Event</h3>
+    <form @submit.prevent="createEvent">
+      <label for="eventTitle">Event Title:</label>
+      <input type="text" id="eventTitle" v-model="eventTitle" required>
+      <br>
+      <label for="eventDate">Event Date:</label>
+      <input type="date" id="eventDate" v-model="eventDate" required>
+      <br>
+      <label for="sTime">Start Time:</label>
+      <input type="time" id="sTime" v-model="sTime" required>
+      <br>
+      <label for="eTime">End Time:</label>
+      <input type="time" id="eTime" v-model="eTime" required>
+      <br>
+      <label for="eventLocation">Event Location (Zoom URL):</label>
+      <input type="text" id="eventLocation" v-model="eventLocation" required>
+      <br>
+      <button type="submit">Create Event</button>
+    </form>
+  </div>
+
     
   </div>
 
@@ -41,6 +63,8 @@
     // const AuthStore = useAuthStore();
 
     import calendar from "../../components/calendar.vue";
+    
+
 
 
     const CLIENT_ID = '737463276639-2uvkfra1rt9185d369u2ct0ilk76hegq.apps.googleusercontent.com'
@@ -65,7 +89,12 @@
                 jsonData1:[],
                 jsonData2:[],
                 jsonDatas:[],
-                optimizedTimes:[]
+                optimizedTimes:[],
+                eventTitle: '',
+                eventDate: '',
+                sTime:'',
+                eTime: '',
+                eventLocation: ''
 
                 
             };
@@ -320,8 +349,6 @@
   return optimizedTimes;
   
 },
-
-
 submitDuration() {
       // Pass the email address to a function
       this.recommendMeetingTimes(this.duration);
@@ -330,8 +357,47 @@ submitDuration() {
       
 
     },
+createEvent() {
+    // const eventDateTime = this.convertTimeZone(this.eventDate, this.eventTime);
+   
+    console.log("Converting time zone...");
+        const dateTime1 = this.eventDate + 'T' + this.sTime+":00";
+        const dateTime2 = this.eventDate + 'T' + this.eTime+":00";
+        console.log(dateTime1);
+        console.log(dateTime2);
+
+    const event = {
+    summary: this.eventTitle,
+    start: {
+        dateTime: dateTime1,
+        "timeZone": "America/New_York",
+    },
+    end: {
+        dateTime: dateTime2,
+        "timeZone": "America/New_York",
+    },
+    location: this.eventLocation,
+    };
+    this.insertEvent(event);
+    console.log(event);
+},
+
+insertEvent(event) {
+    var vm = this;
+        vm.api.client.load('calendar', 'v3', () => {
+            vm.api.client.calendar.events.insert({
+                'calendarId': 'primary',
+                'resource': event
+        }).then(response => {
+            console.log(response) 
+});
+                });
+
+}
+}
+
  
-        }
+        
             
         
     };
