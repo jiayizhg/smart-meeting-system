@@ -1,4 +1,5 @@
 from datetime import datetime
+import math
 from typing import List
 from fastapi import FastAPI, Request, UploadFile, File, HTTPException, APIRouter, HTTPException, Depends
 from fastapi.responses import JSONResponse
@@ -7,7 +8,10 @@ import json
 from flask_cors import cross_origin
 import numpy as np
 from deepface import DeepFace
-from insightface.app import FaceAnalysis
+
+import mediapipe as mp
+
+
 import shutil
 import uvicorn
 from fastapi.middleware.cors import CORSMiddleware
@@ -244,23 +248,89 @@ app.add_middleware(
 
 
 #Facial Part
-app_analysis = FaceAnalysis(allowed_modules=['detection', 'landmark_2d_106'])
-app_analysis.prepare(ctx_id=0, det_size=(640, 640))
 
-def is_eye_closed(eye_points, left_point, right_point):
-    bottom_point = np.mean(eye_points[[0, 4, 5]], axis=0)
-    top_point = np.mean(eye_points[[7, 8, 9]], axis=0)
-    vertical_distance = np.linalg.norm(top_point - bottom_point)
-    horizontal_distance = np.linalg.norm(left_point - right_point)
-    ear = vertical_distance / horizontal_distance
-    threshold = 0.12
-    return ear < threshold
+LEFT_EYE_INDICES = [362, 382, 381, 380, 374, 373, 390, 249, 263, 466, 388, 387, 386, 385, 384, 398]
+RIGHT_EYE_INDICES = [33, 7, 163, 144, 145, 153, 154, 155, 133, 173, 157, 158, 159, 160, 161, 246]
+mp_face_mesh = mp.solutions.face_mesh
+face_mesh = mp_face_mesh.FaceMesh(min_detection_confidence=0.5, min_tracking_confidence=0.5)
+
+def euclidean_distance(point1, point2):
+    x1, y1 = point1
+    x2, y2 = point2
+    return math.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2)
+
+def calculate_eye_aspect_ratio(landmarks, eye_indices):
+    horizontal = euclidean_distance(landmarks[eye_indices[0]], landmarks[eye_indices[8]])
+    vertical1 = euclidean_distance(landmarks[eye_indices[12]], landmarks[eye_indices[4]])
+    vertical2 = euclidean_distance(landmarks[eye_indices[13]], landmarks[eye_indices[5]])
+    ear = (vertical1 + vertical2) / (2 * horizontal)
+    return ear
+
+def get_eye_landmarks(frame):
+    frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+    results = face_mesh.process(frame_rgb)
+    landmarks = []
+    if results.multi_face_landmarks:
+        for landmark in results.multi_face_landmarks[0].landmark: 
+            x, y = int(landmark.x * frame.shape[1]), int(landmark.y * frame.shape[0])
+            landmarks.append((x, y))
+
+    LEFT_EYE_INDICES = [33, 133, 160, 144, 145, 153, 154, 155]
+    RIGHT_EYE_INDICES = [362, 263, 466, 388, 387, 386, 385, 384]
+
+    cropped_left_eye, cropped_right_eye = [], []
+    if landmarks:
+        left_eye_coords = [landmarks[idx] for idx in LEFT_EYE_INDICES]
+        lx_coords, ly_coords = zip(*left_eye_coords)
+        lx_min, lx_max = min(lx_coords), max(lx_coords)
+        ly_min, ly_max = min(ly_coords), max(ly_coords)
+        cropped_left_eye = frame[ly_min:ly_max, lx_min:lx_max]
+
+        right_eye_coords = [landmarks[idx] for idx in RIGHT_EYE_INDICES]
+        rx_coords, ry_coords = zip(*right_eye_coords)
+        rx_min, rx_max = min(rx_coords), max(rx_coords)
+        ry_min, ry_max = min(ry_coords), max(ry_coords)
+        cropped_right_eye = frame[ry_min:ry_max, rx_min:rx_max]
+    return landmarks, cropped_left_eye, cropped_right_eye
+
+def is_left_eye_closed(landmarks, threshold=0.15):
+    left_ear = calculate_eye_aspect_ratio(landmarks, LEFT_EYE_INDICES)
+    return left_ear < threshold
+
+def is_right_eye_closed(landmarks, threshold=0.15):
+    right_ear = calculate_eye_aspect_ratio(landmarks, RIGHT_EYE_INDICES)
+    return right_ear < threshold
+
+def get_eye_direction(cropped_eye):
+    gray_eye = cv2.cvtColor(cropped_eye, cv2.COLOR_BGR2GRAY)
+    blurred_eye = cv2.GaussianBlur(gray_eye, (7, 7), 0)
+    _, threshold_eye = cv2.threshold(blurred_eye, 30, 255, cv2.THRESH_BINARY_INV)
+    contours, _ = cv2.findContours(threshold_eye, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+    if contours:
+        contour = max(contours, key=cv2.contourArea)
+        (x, y, w, h) = cv2.boundingRect(contour)
+        if x + w/2 < cropped_eye.shape[1]/3:
+            return "LEFT"
+        elif x + w/2 > cropped_eye.shape[1]*2/3:
+            return "RIGHT"
+        else:
+            return "CENTER"
+    else:
+        return "UNKNOWN"
+    
+
 
 async def process_frame(file_path: str):
     emotion_results = DeepFace.analyze(img_path=file_path, actions=['emotion'], enforce_detection=False)
     frame = cv2.imread(file_path)
     # faces = app_analysis.get(frame)
-    eyes_status = {"left_eye": "open", "right_eye": "open"}
+    eyes_status = {"left_eye": "open", "right_eye": "open", "left_eye_direction": "CENTER", "right_eye_direction": "CENTER"}
+    landmarks, cropped_left_eye, cropped_right_eye = get_eye_landmarks(frame)
+    eyes_status["left_eye"] = "closed" if is_left_eye_closed(landmarks) else "open"
+    eyes_status["right_eye"] = "closed" if is_right_eye_closed(landmarks) else "open"
+    eyes_status["left_eye_direction"] = get_eye_direction(cropped_left_eye)
+    eyes_status["right_eye_direction"] = get_eye_direction(cropped_right_eye)
     # for face in faces:
     #         lmk = face.landmark_2d_106
     #         lmk = np.round(lmk).astype(np.int)
