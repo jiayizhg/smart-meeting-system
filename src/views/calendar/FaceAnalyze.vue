@@ -1,6 +1,6 @@
 <template>
   <div>
-
+    <radar-chart v-if="emotion" :chart-data="radarChartData" :options="radarChartOptions"/>
     <div v-if="emotion">
       <h3>Emotions:</h3>
       <ul>
@@ -60,8 +60,12 @@
 </style>
 <script>
 import axios from "axios";
+import RadarChart from '../../components/RadarChart.vue'
 
 export default {
+  components: {
+    RadarChart
+  },
   data() {
     return {
       videoStream: null,
@@ -79,7 +83,23 @@ export default {
       startX: 0,
       startY: 0,
       deltaX: 0,
-      deltaY: 0
+      deltaY: 0,
+      radarChartData: {
+        labels: ['Angry', 'Disgust', 'Fear', 'Happy', 'Sad', 'Surprise', 'Neutral'],
+        datasets: [
+          {
+            label: 'Emotions',
+            data: [3.83, 0.00, 8.62, 4.28, 24.25, 0.19, 58.96]
+          }
+        ]
+      },
+      radarChartOptions: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scale: {
+          ticks: { beginAtZero: true }
+        }
+      }
     };
   },
   async created() {
@@ -92,6 +112,11 @@ export default {
     } catch (error) {
       console.error("Error fetching devices:", error);
     }
+  },
+  mounted () {
+    this.$nextTick(() => {
+      this.renderChart(this.chartData, this.options)
+    })
   },
   methods: {
     async startDrag(event) {
