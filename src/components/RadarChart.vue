@@ -115,7 +115,7 @@ export default {
       deep: true,
       handler(newVal) {
         this.chartData = newVal;
-        console.log("Updated chartData:", this.chartData);
+        // console.log("Updated chartData:", this.chartData);
       }
     }
   },

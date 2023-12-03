@@ -2,7 +2,7 @@
   <div>
     <RadarChart v-if="emotion" :width=500 :height=500
       :external-chart-data="radarChartData" :external-chart-options="radarChartOptions"/>
-    <LineChart v-if="emotion" :width=500 :height=500
+    <LineChart :width=500 :height=500
       :external-chart-data="lineChartData" :external-chart-options="lineChartOptions"/>
     <div v-if="emotion">
       <h3>Emotions:</h3>
@@ -90,7 +90,8 @@ export default {
       deltaX: 0,
       deltaY: 0,
 
-
+      startDate: null,
+      endDate: null,
 
       
       radarChartData: {
@@ -117,20 +118,20 @@ export default {
       },
       lineChartData: {
         labels: [
-          'January',
-          'February',
-          'March',
-          'April',
-          'May',
-          'June',
-          'July'
+          '2023-06-15T13:45:30',
+          '2023-06-15T13:45:35',
+          '2023-06-15T13:45:40',
+          '2023-06-15T13:45:45',
+          '2023-06-15T13:45:50',
+          '2023-06-15T13:45:55',
+          '2023-06-15T13:45:60'
         ],
         datasets: [
           {
             label: 'Emotion Time Series',
-            backgroundColor: '#f87979',
-            borderColor:'#b0569a',
-            data: [40, 39, 10, 40, 39, 80, 40]
+            backgroundColor: 'rgba(179,181,198,1)',
+            borderColor:'rgba(179,181,198,1)',
+            data: [50, 50, 50, 50, 50, 50, 50]
           }
         ]
       },
@@ -151,6 +152,7 @@ export default {
     } catch (error) {
       console.error("Error fetching devices:", error);
     }
+    this.timer = setInterval(()=>{this.refreshLineChart()}, 3000);
   },
   watch: {
     emotion(newVal) {
@@ -172,6 +174,9 @@ export default {
         ]
       }
     }
+  },
+  beforeDestroy() {
+    clearInterval(this.timer);
   },
   // mounted () {
   //   let radarData = [100, 100, 0, 0, 0, 0, 100]
@@ -255,6 +260,10 @@ export default {
     async processVideoFrame() {
       if (this.isProcessing && this.videoStream && this.hasProcessed) {
         this.hasProcessed = false;
+        this.startDate= new Date().toISOString().slice(0, 19);
+        this.endDate= new Date();
+        this.endDate.setTime(this.endDate.getTime() + (3 * 60 * 60 * 1000));
+        this.endDate= this.endDate.toISOString().slice(0, 19);
         await this.captureAndSendFrame();
         requestAnimationFrame(this.processVideoFrame);
       }
@@ -302,9 +311,75 @@ export default {
         }, "image/jpeg");
       });
     },
-    // async captureAndSendFrame() {
+    updateChartData(jsonData) {
+      const labels = jsonData.map(item => {
+        return item.update_time.split('T')[0];
+      });
 
-    // }
+      const data = jsonData.map(item => {
+        return item.distracted_result;
+      });
+
+      this.lineChartData = {
+        labels: labels,
+        datasets: [
+          {
+            label: 'Emotion Time Series',
+            backgroundColor: '#f87979',
+            borderColor: '#b0569a',
+            data: data
+          }
+        ]
+      };
+    },
+    async refreshLineChart(user_id=1, emotion_type="neutral") {
+      console.log("Emotion Series Collect Start:");
+      console.log(this.isProcessing)
+      console.log(this.startDate)
+      console.log(this.endDate)
+      if(!this.isProcessing) return;
+
+      const baseUrl= "http://localhost:8000/get_user_emotion_data/"
+      // const url = `${baseUrl}${user_id}/${emotion_type}/${encodeURIComponent(this.startDate)}/${encodeURIComponent(this.endDate)}`;
+      // try {
+      //       const response = await axios.get(url);
+
+      //       console.log("Emotion Series Response:", response.data); 
+      //       this.updateChartData(response.data);
+      //     } 
+      // catch (error) {
+      //     console.error("Error Geting Emotion Series:", error);
+      // }
+
+      // axios.get(`http://localhost:8000/get_user_emotion_data/${user_id}/${emotion_type}/${this.startDate}/${this.endDate}`)
+      // .then(function (response) {
+      //   console.log(response.data);
+      // })
+      // .catch(function (error) {
+      //   console.log(error);
+      // });
+
+      axios({
+        method: 'get',
+        url: baseUrl, 
+        params: {
+          'user_id': user_id,
+          'distraction_type': emotion_type,
+          'start_date': this.startDate,
+          'end_date': this.endDate
+        },
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      })
+      .then(function (response) {
+          this.updateChartData(response.data);
+          console.log(response.data);
+      })
+      .catch(function (error) {
+          console.log(error); 
+      });
+    }
     
   }
 };
