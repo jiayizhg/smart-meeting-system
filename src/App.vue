@@ -1,22 +1,47 @@
+
 <template>
   <div id="app">
-    <p>
-        <!-- use router-link component for navigation. -->
-        <!-- specify the link by passing the `to` prop. -->
-        <!-- `<router-link>` will be rendered as an `<a>` tag by default -->
-      <router-link to="/scheduling">scheduling</router-link>
-      <router-link to="/anaylze">Anaylze</router-link>
-    </p>
       <!-- route outlet -->
       <!-- component matched by the route will render here -->
-    <router-view></router-view>
+
+
+  
+      <!-- <div class="home-left">
+          <Sidebar />
+      </div>
+        
+      <div class="home-right">
+
+
+          <Home />
+
+      </div>
+       -->
+
+       <div class="home-left">
+          <Sidebar />
+      </div>
+      <div class="home-right">
+        <router-view></router-view>
+      </div>
   </div>
 </template>
 
 <script>
+ 
+
+  import Sidebar from './components/sidebar.vue'
+  // import Home from './components/home.vue'
+
+  export default {
+    components: {Sidebar}
+  }
+
+
 
 </script>
 
 <style>
 
 </style>
+
