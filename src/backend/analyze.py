@@ -417,7 +417,7 @@ async def upload_file(file: UploadFile = File(...)):
 def get_user_emotion_statistics_data(user_id: int):
     return get_user_emotion_statistics(user_id)
 
-@app.get("/get_user_emotion_data/{user_id}/{emotion_type}/{start_date}/{end_date}", response_model=list)
+@app.get("/get_user_emotion_data/{user_id}&{emotion_type}&{start_date}&{end_date}", response_model=list)
 def get_user_emotion(user_id: int, emotion_type: str, start_date: datetime, end_date: datetime):
     return get_user_emotion_data(user_id, emotion_type, start_date, end_date)
 
