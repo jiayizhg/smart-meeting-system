@@ -1,5 +1,5 @@
 <template>
-  <Radar
+  <LineChartGenerator
     :chart-options="chartOptions"
     :chart-data="chartData"
     :chart-id="chartId"
@@ -13,36 +13,38 @@
 </template>
 
 <script>
-import { Radar } from 'vue-chartjs/legacy'
+import { Line as LineChartGenerator } from 'vue-chartjs/legacy'
 
 import {
   Chart as ChartJS,
   Title,
   Tooltip,
   Legend,
-  PointElement,
   LineElement,
-  RadialLinearScale
+  LinearScale,
+  CategoryScale,
+  PointElement
 } from 'chart.js'
 
 ChartJS.register(
   Title,
   Tooltip,
   Legend,
-  PointElement,
-  RadialLinearScale,
-  LineElement
+  LineElement,
+  LinearScale,
+  CategoryScale,
+  PointElement
 )
 
 export default {
-  name: 'RadarChart',
+  name: 'LineChart',
   components: {
-    Radar
+    LineChartGenerator
   },
   props: {
     chartId: {
       type: String,
-      default: 'radar-chart'
+      default: 'line-chart'
     },
     datasetIdKey: {
       type: String,
@@ -79,32 +81,26 @@ export default {
   },
   data() {
     return {
-      chartData:  this.externalChartData ||{
-        labels: ['Angry', 'Disgust', 'Fear', 'Happy', 'Sad', 'Surprise', 'Neutral'],
+      chartData: this.externalChartData || {
+        labels: [
+          '2023-06-15T13:45:30',
+          '2023-06-15T13:45:35',
+          '2023-06-15T13:45:40',
+          '2023-06-15T13:45:45',
+          '2023-06-15T13:45:50',
+          '2023-06-15T13:45:55',
+          '2023-06-15T13:45:60'
+        ],
         datasets: [
           {
-            label: 'Emotions',
-            backgroundColor: 'rgba(179,181,198,0.2)',
-            borderColor: 'rgba(179,181,198,1)',
-            pointBackgroundColor: 'rgba(179,181,198,1)',
-            pointBorderColor: '#fff',
-            pointHoverBackgroundColor: '#fff',
-            pointHoverBorderColor: 'rgba(179,181,198,1)',
-            data: [65, 59, 90, 81, 56, 55, 40]
-          },
-          // {
-          //   label: 'My Second dataset',
-          //   backgroundColor: 'rgba(255,99,132,0.2)',
-          //   borderColor: 'rgba(255,99,132,1)',
-          //   pointBackgroundColor: 'rgba(255,99,132,1)',
-          //   pointBorderColor: '#fff',
-          //   pointHoverBackgroundColor: '#fff',
-          //   pointHoverBorderColor: 'rgba(255,99,132,1)',
-          //   data: [28, 48, 40, 19, 96, 27, 100]
-          // }
+            label: 'Emotion Time Series',
+            backgroundColor: 'rgba(179,181,198,1)',
+            borderColor:'rgba(179,181,198,1)',
+            data: [50, 50, 50, 50, 50, 50, 50]
+          }
         ]
       },
-      chartOptions: this.externalChartOptions ||{
+      chartOptions: this.externalChartOptions || {
         responsive: true,
         maintainAspectRatio: false
       }

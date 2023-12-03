@@ -1,6 +1,9 @@
 <template>
   <div>
-    <radar-chart v-if="emotion" :chart-data="radarChartData" :options="radarChartOptions"/>
+    <RadarChart v-if="emotion" :width=500 :height=500
+      :external-chart-data="radarChartData" :external-chart-options="radarChartOptions"/>
+    <LineChart v-if="emotion" :width=500 :height=500
+      :external-chart-data="lineChartData" :external-chart-options="lineChartOptions"/>
     <div v-if="emotion">
       <h3>Emotions:</h3>
       <ul>
@@ -61,10 +64,12 @@
 <script>
 import axios from "axios";
 import RadarChart from '../../components/RadarChart.vue'
+import LineChart from '../../components/LineChart.vue'
 
 export default {
   components: {
-    RadarChart
+    RadarChart,
+    LineChart
   },
   data() {
     return {
@@ -84,12 +89,22 @@ export default {
       startY: 0,
       deltaX: 0,
       deltaY: 0,
+
+
+
+      
       radarChartData: {
         labels: ['Angry', 'Disgust', 'Fear', 'Happy', 'Sad', 'Surprise', 'Neutral'],
         datasets: [
           {
             label: 'Emotions',
-            data: [3.83, 0.00, 8.62, 4.28, 24.25, 0.19, 58.96]
+            backgroundColor: 'rgba(255,99,132,0.2)',
+            borderColor: 'rgba(255,99,132,1)',
+            pointBackgroundColor: 'rgba(255,99,132,1)',
+            pointBorderColor: '#fff',
+            pointHoverBackgroundColor: '#fff',
+            pointHoverBorderColor: 'rgba(255,99,132,1)',
+            data: [0, 0, 0, 0, 0, 0, 100]
           }
         ]
       },
@@ -99,8 +114,32 @@ export default {
         scale: {
           ticks: { beginAtZero: true }
         }
+      },
+      lineChartData: {
+        labels: [
+          'January',
+          'February',
+          'March',
+          'April',
+          'May',
+          'June',
+          'July'
+        ],
+        datasets: [
+          {
+            label: 'Emotion Time Series',
+            backgroundColor: '#f87979',
+            borderColor:'#b0569a',
+            data: [40, 39, 10, 40, 39, 80, 40]
+          }
+        ]
+      },
+      lineChartOptions: {
+        responsive: true,
+        maintainAspectRatio: false,
       }
     };
+    
   },
   async created() {
     try {
@@ -113,11 +152,51 @@ export default {
       console.error("Error fetching devices:", error);
     }
   },
-  mounted () {
-    this.$nextTick(() => {
-      this.renderChart(this.chartData, this.options)
-    })
+  watch: {
+    emotion(newVal) {
+      let radarData = [newVal.angry,newVal.disgust,newVal.fear,newVal.happy,newVal.sad,newVal.surprise,newVal.neutral]
+      // this.radarChartData["datasets"]["data"]=radarData
+      this.radarChartData={
+        labels: ['Angry', 'Disgust', 'Fear', 'Happy', 'Sad', 'Surprise', 'Neutral'],
+        datasets: [
+          {
+            label: 'Emotions',
+            backgroundColor: 'rgba(255,99,132,0.2)',
+            borderColor: 'rgba(255,99,132,1)',
+            pointBackgroundColor: 'rgba(255,99,132,1)',
+            pointBorderColor: '#fff',
+            pointHoverBackgroundColor: '#fff',
+            pointHoverBorderColor: 'rgba(255,99,132,1)',
+            data: radarData
+          }
+        ]
+      }
+    }
   },
+  // mounted () {
+  //   let radarData = [100, 100, 0, 0, 0, 0, 100]
+  //   this.radarChartData={
+  //       labels: ['Angry', 'Disgust', 'Fear', 'Happy', 'Sad', 'Surprise', 'Neutral'],
+  //       datasets: [
+  //         {
+  //           label: 'Emotions',
+  //           backgroundColor: 'rgba(255,99,132,0.2)',
+  //           borderColor: 'rgba(255,99,132,1)',
+  //           pointBackgroundColor: 'rgba(255,99,132,1)',
+  //           pointBorderColor: '#fff',
+  //           pointHoverBackgroundColor: '#fff',
+  //           pointHoverBorderColor: 'rgba(255,99,132,1)',
+  //           data: radarData
+  //         }
+  //       ]
+  //     }
+  // },
+  // mounted () {
+  //   this.$nextTick(() => {
+  //     this.renderChart(this.chartData, this.options)
+  //   })
+  // },
+
   methods: {
     async startDrag(event) {
       this.dragging = true;
@@ -222,7 +301,10 @@ export default {
           }
         }, "image/jpeg");
       });
-    }
+    },
+    // async captureAndSendFrame() {
+
+    // }
     
   }
 };
