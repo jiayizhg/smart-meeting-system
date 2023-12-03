@@ -1,4 +1,5 @@
 from datetime import datetime
+from pydantic import BaseModel
 import math
 from typing import List
 from fastapi import FastAPI, Request, UploadFile, File, HTTPException, APIRouter, HTTPException, Depends
@@ -20,14 +21,14 @@ from sqlalchemy import create_engine, Column, Integer, String, ForeignKey, Float
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
 from apscheduler.schedulers.background import BackgroundScheduler
-from sqlalchemy import create_engine, Column, Integer, Float, DateTime, PrimaryKeyConstraint
+from sqlalchemy import create_engine, Column, Integer, Float, DateTime, Boolean,BigInteger,PrimaryKeyConstraint
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.sql import func
 from urllib.parse import quote_plus
 Base = declarative_base()
 
 
-raw_password = ""
+raw_password = "Wangyumin2022!"
 encoded_password = quote_plus(raw_password)
 # connection_string = f"mysql+pymysql://root:{encoded_password}@localhost:3306/meeting_db"
 # engine = create_engine(connection_string)
@@ -79,6 +80,25 @@ class UserDistractedData(Base):
     )
     
 
+class UserData(Base):
+    __tablename__ = 'users'
+    id = Column(BigInteger, primary_key=True)
+    name = Column(VARCHAR(100),nullable=False)
+    role = Column(VARCHAR(50),nullable=False)
+    password = Column(VARCHAR(100),nullable=False)
+    is_temporary = Column(Boolean, default=False,nullable=False)
+
+
+class UserCreate(BaseModel):
+    id:int
+    name:str
+    role:str
+    password:str
+    is_temporary:bool
+
+class UserAuthenticate(BaseModel):
+    name:str
+    passowrd:str
 
 Base.metadata.create_all(bind=engine)
 
@@ -414,6 +434,21 @@ def get_user_distraction_count(user_id: int, distraction_type: str, start_date: 
     print(get_user_distraction_type_count(user_id, distraction_type, start_date, end_date))
     return get_user_distraction_type_count(user_id, distraction_type, start_date, end_date)
 
+
+@app.post("/add_user")
+def add_user(user:UserCreate):
+    insert_user_data(db, user.id,user.name,user.role,user.is_temporary,user.password)
+
+@app.post("/user_login")
+def user_login(user:UserAuthenticate):
+    db_user = db.query(UserData).filter(UserData.name == user.name).first()
+    if db_user and user.passowrd == db_user.password:
+        return {
+            "message":"Login successful"
+        }
+    else:
+        raise HTTPException(status_code=400,detail="Wrong password")
+
 #get user statistics data using user_id from db
 def get_user_emotion_statistics(user_id: int):
     try:
@@ -564,6 +599,25 @@ def insert_user_distracted_data(db, user_id,distracted_result):
         db.commit()
     except Exception as e:
         print(e)
+
+def insert_user_data(db, id, name, role, is_temporary,password):
+    user_data = UserData(
+        id = id,
+        name = name,
+        role = role,
+        is_temporary = is_temporary,
+        password = password
+    )
+    try:
+        db.add(user_data)
+        db.commit()
+    except Exception as e:
+        print(e)
+
+
+
+
+
 
 print(get_user_distraction_data(1))
 print(get_user_distraction_type_count(2,'Normal','2023-11-30T12:23:23','2023-12-02T12:23:23'))
