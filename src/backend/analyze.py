@@ -2,7 +2,7 @@ from datetime import datetime
 from pydantic import BaseModel
 import math
 from typing import List
-from fastapi import FastAPI, Request, UploadFile, File, HTTPException, APIRouter, HTTPException, Depends
+from fastapi import FastAPI, Request, UploadFile, File, HTTPException, APIRouter, HTTPException, Depends,Query
 from fastapi.responses import JSONResponse
 import cv2
 import json
@@ -28,7 +28,7 @@ from urllib.parse import quote_plus
 Base = declarative_base()
 
 
-raw_password = "Wangyumin2022!"
+raw_password = ""
 encoded_password = quote_plus(raw_password)
 # connection_string = f"mysql+pymysql://root:{encoded_password}@localhost:3306/meeting_db"
 # engine = create_engine(connection_string)
@@ -417,9 +417,14 @@ async def upload_file(file: UploadFile = File(...)):
 def get_user_emotion_statistics_data(user_id: int):
     return get_user_emotion_statistics(user_id)
 
-@app.get("/get_user_emotion_data/{user_id}&{emotion_type}&{start_date}&{end_date}", response_model=list)
-def get_user_emotion(user_id: int, emotion_type: str, start_date: datetime, end_date: datetime):
+# @app.get("/get_user_emotion_data/{user_id}&{emotion_type}&{start_date}&{end_date}", response_model=list)
+# def get_user_emotion(user_id: int, emotion_type: str, start_date: datetime, end_date: datetime):
+@app.get("/get_user_emotion_data")
+def get_user_emotion(user_id: int = Query(...), emotion_type: str = Query(...), start_date: datetime = Query(...), end_date: datetime = Query(...)):
+    print(f"Received request with user_id: {user_id}, emotion_type: {emotion_type}, start_date: {start_date}, end_date: {end_date}")
     return get_user_emotion_data(user_id, emotion_type, start_date, end_date)
+
+
 
 
 @app.get("/get_distraction_data/{user_id}",response_model=list)
@@ -508,23 +513,23 @@ def get_user_emotion_data(user_id: int, emotion_type: str, start_date: datetime,
             .order_by(UserEmotionData.update_time)
             .all()
         )
-
-        if not result:
-            raise HTTPException(status_code=404, detail="Data not found")
-        print(result)
-
-        formatted_results = [
-            {
-                'emotion_data': "{:.6f}".format(getattr(entry, emotion_type)),
-                'update_time': entry.update_time
-            }
-            for entry in result
-        ]
-
-        return formatted_results
-    
+        
     except Exception as e:
         print(e)
+    if not result:
+        raise HTTPException(status_code=404, detail="Data not found")
+
+    formatted_results = [
+        {
+            'emotion_data': "{:.6f}".format(getattr(entry, emotion_type)),
+            'update_time': entry.update_time
+        }
+        for entry in result
+    ]
+    print(formatted_results)
+    return formatted_results
+    
+
 
 
 #get user distracted data using id

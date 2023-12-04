@@ -242,6 +242,10 @@ export default {
           this.$refs.videoElement.srcObject = stream;
         });
         this.isProcessing = true;
+        this.startDate= this.formatDateToEasternTime(new Date());
+        this.endDate= new Date();
+        this.endDate.setTime(this.endDate.getTime() + (3 * 60 * 60 * 1000));
+        this.endDate= this.formatDateToEasternTime(this.endDate);
         this.processVideoFrame();
       } catch (error) {
         console.error("Error starting camera:", error);
@@ -256,14 +260,30 @@ export default {
         this.$refs.videoElement.srcObject = null;
       }
     },
+    convertUTCToEasternTime(date) {
+      const EST_OFFSET = 5;
+      const EDT_OFFSET = 4; 
+      const janOffset = new Date(date.getFullYear(), 0, 1).getTimezoneOffset();
+      const junOffset = new Date(date.getFullYear(), 5, 1).getTimezoneOffset();
+      let currentOffset = date.getTimezoneOffset();
+      let dst = (janOffset !== junOffset && currentOffset === Math.min(janOffset, junOffset));
+      let utc = date.getTime() + (currentOffset * 60000);
+      let easternTime = new Date(utc - (dst ? EDT_OFFSET : EST_OFFSET) * 3600000);
+      return easternTime;
+    },
+    formatDateToEasternTime(date) {
+      let year = date.getFullYear();
+      let month = String(date.getMonth() + 1).padStart(2, '0');
+      let day = String(date.getDate()).padStart(2, '0');
+      let hours = String(date.getHours()).padStart(2, '0');
+      let minutes = String(date.getMinutes()).padStart(2, '0');
+      let seconds = String(date.getSeconds()).padStart(2, '0');
 
+      return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
+    },
     async processVideoFrame() {
       if (this.isProcessing && this.videoStream && this.hasProcessed) {
         this.hasProcessed = false;
-        this.startDate= new Date().toISOString().slice(0, 19);
-        this.endDate= new Date();
-        this.endDate.setTime(this.endDate.getTime() + (3 * 60 * 60 * 1000));
-        this.endDate= this.endDate.toISOString().slice(0, 19);
         await this.captureAndSendFrame();
         requestAnimationFrame(this.processVideoFrame);
       }
@@ -313,11 +333,11 @@ export default {
     },
     updateChartData(jsonData) {
       const labels = jsonData.map(item => {
-        return item.update_time.split('T')[0];
+        return item.update_time.split('T')[1];
       });
 
       const data = jsonData.map(item => {
-        return item.distracted_result;
+        return item.emotion_data;
       });
 
       this.lineChartData = {
@@ -333,12 +353,9 @@ export default {
       };
     },
     async refreshLineChart(user_id=1, emotion_type="neutral") {
-      console.log("Emotion Series Collect Start:");
-      console.log(this.isProcessing)
-      console.log(this.startDate)
-      console.log(this.endDate)
       if(!this.isProcessing) return;
-
+      const ref = this;
+      console.log("Emotion Series Collect Start:");
       const baseUrl= "http://localhost:8000/get_user_emotion_data/"
       // const url = `${baseUrl}${user_id}/${emotion_type}/${encodeURIComponent(this.startDate)}/${encodeURIComponent(this.endDate)}`;
       // try {
@@ -364,7 +381,7 @@ export default {
         url: baseUrl, 
         params: {
           'user_id': user_id,
-          'distraction_type': emotion_type,
+          'emotion_type': emotion_type,
           'start_date': this.startDate,
           'end_date': this.endDate
         },
@@ -373,12 +390,13 @@ export default {
         }
       })
       .then(function (response) {
-          this.updateChartData(response.data);
           console.log(response.data);
+          ref.updateChartData(response.data);
       })
       .catch(function (error) {
           console.log(error); 
       });
+      
     }
     
   }
