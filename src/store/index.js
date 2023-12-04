@@ -5,7 +5,11 @@ Vue.use(Vuex);
 
 export default new Vuex.Store({
     state: {
-        videoStream: null
+        videoStream: null,
+        user: {
+            id: '',
+            name: '',
+        }
     },
     mutations: {
         start (state, video) {
@@ -15,6 +19,25 @@ export default new Vuex.Store({
             if (state.videoStream) {
                 state.videoStream.getTracks().forEach(track => track.stop());
                 state.videoStream = null;
+            }
+        },
+        updateUser(state, userData) {
+            state.user = userData;
+        },
+        updateUserId(state, id) {
+            state.user.id = id;
+        },
+        updateUserName(state, name) {
+            state.user.name = name;
+        },
+        saveUser(state) {
+            sessionStorage.setItem('user', JSON.stringify(state.user));
+        },
+        loadUserFast(state){
+            const userString = sessionStorage.getItem('user');
+            if (userString) {
+                const userData = JSON.parse(userString);
+                state.user = userData;
             }
         }
     },
@@ -46,11 +69,30 @@ export default new Vuex.Store({
         },
         stopCamera ({ commit }) {
             commit('stop');
+        },
+        setUser({ commit }, userData) {
+            commit('updateUser', userData);
+        },
+        setUserId({ commit }, id) {
+            commit('updateUserId', id);
+        },
+        setUserName({ commit }, name) {
+            commit('updateUserName', name);
+        },
+        loadUser({ commit }) {
+            const userString = sessionStorage.getItem('user');
+            if (userString) {
+                const userData = JSON.parse(userString);
+                commit('setUser', userData);
+            }
         }
     },
     getters: {
         isCameraStarted: (state) => {
             return !!state.videoStream;
+        },
+        getUser: (state) => {
+            return state.user;
         }
     }
 });

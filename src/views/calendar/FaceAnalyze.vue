@@ -3,44 +3,52 @@
     <br/>
     <Login @logInResult="handleDataFromChild"/>
     <div v-if="isLogIn">
-      <div class="chart-container" v-if="emotion">
-        <div>
-        <RadarChart v-if="emotion" :width="300" :height="300"
-          :external-chart-data="radarChartData" :external-chart-options="radarChartOptions"/>
-        </div>
-        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-        <div>
-          <select v-model="selectedEmotion" class="elegant-select">
-          <option value="angry">Angry</option>
-          <option value="disgust">Disgust</option>
-          <option value="fear">Fear</option>
-          <option value="happy">Happy</option>
-          <option value="sad">Sad</option>
-          <option value="surprise">Surprise</option>
-          <option value="neutral">Neutral</option>
-          </select>
-          <LineChart v-if="emotion" :width="300" :height="300"
-            :external-chart-data="lineChartData" :external-chart-options="lineChartOptions"/>
+      <div v-if="!isProcessing">
+        <div class="chart-container" v-if="emotion">
+          <RadarChart v-if="emotion" :width="300" :height="300"
+            :external-chart-data="radarAnalysisData" :external-chart-options="radarChartOptions"/>
         </div>
       </div>
-      <div v-if="emotion">
-        <!-- <h3>Emotions:</h3> -->
-        <!-- <ul>
-          <li v-for="(value, key) in emotion" :key="key">
-            {{ key }}: {{ value.toFixed(2) }}%
-          </li>
-        </ul> -->
-      </div>
-      <div v-if="eyes_status">
-        <h3>Eyes Focus Analysis:</h3>
-        Left Eye: {{ eyes_status.left_eye }}<br>
-        Left Eye Focus:{{ eyes_status.left_eye_direction }}<br>
-        Right Eye: {{ eyes_status.right_eye }}<br>
-        Right Eye Focus:{{ eyes_status.right_eye_direction }}<br>
+      <div v-if="isProcessing">
+        <div class="chart-container" v-if="emotion">
+          <div>
+          <RadarChart v-if="emotion" :width="300" :height="300"
+            :external-chart-data="radarChartData" :external-chart-options="radarChartOptions"/>
+          </div>
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+          <div>
+            <select v-model="selectedEmotion" class="elegant-select">
+            <option value="angry">Angry</option>
+            <option value="disgust">Disgust</option>
+            <option value="fear">Fear</option>
+            <option value="happy">Happy</option>
+            <option value="sad">Sad</option>
+            <option value="surprise">Surprise</option>
+            <option value="neutral">Neutral</option>
+            </select>
+            <LineChart v-if="emotion" :width="300" :height="300"
+              :external-chart-data="lineChartData" :external-chart-options="lineChartOptions"/>
+          </div>
+        </div>
+        <div v-if="emotion">
+          <!-- <h3>Emotions:</h3> -->
+          <!-- <ul>
+            <li v-for="(value, key) in emotion" :key="key">
+              {{ key }}: {{ value.toFixed(2) }}%
+            </li>
+          </ul> -->
+        </div>
+        <div v-if="eyes_status">
+          <h3>Eyes Focus Analysis:</h3>
+          Left Eye: {{ eyes_status.left_eye }}<br>
+          Left Eye Focus:{{ eyes_status.left_eye_direction }}<br>
+          Right Eye: {{ eyes_status.right_eye }}<br>
+          Right Eye Focus:{{ eyes_status.right_eye_direction }}<br>
+        </div>
       </div>
       <p style="
       font-family: 'Arial', sans-serif;
@@ -50,7 +58,7 @@
       border: 1px solid #ddd;
       border-radius: 8px;
       padding: 10px 20px;
-      margin: 15px;
+      margin: 10px;
       transition: all 0.3s ease;
 
       &:hover {
@@ -68,8 +76,8 @@
 
       <br/>
       <br/>
-      <button  v-if="!videoStream" @click="startCamera">Start Camera</button>
-      <button v-if="videoStream" @click="stopCamera">Close Camera</button>
+      <button  v-if="!videoStream" @click="startCamera">Start Meeting</button>
+      <button v-if="videoStream" @click="stopCamera">Leave Meeting</button>
       <video v-if="videoStream" ref="videoElement" autoplay playsinline></video>
       <div class="cat"  :style="{ right: rightPos + 'px', bottom: bottomPos + 'px' }"
       @mousedown.prevent="startDrag"
@@ -217,6 +225,22 @@ export default {
       userNameStored:null,
       
       selectedEmotion:'neutral',
+
+      radarAnalysisData: {
+        labels: ['Angry', 'Disgust', 'Fear', 'Happy', 'Sad', 'Surprise', 'Neutral'],
+        datasets: [
+          {
+            label: 'Emotions',
+            backgroundColor: 'rgba(255,99,132,0.2)',
+            borderColor: 'rgba(255,99,132,1)',
+            pointBackgroundColor: 'rgba(255,99,132,1)',
+            pointBorderColor: '#fff',
+            pointHoverBackgroundColor: '#fff',
+            pointHoverBorderColor: 'rgba(255,99,132,1)',
+            data: [0, 0, 0, 0, 0, 0, 100]
+          }
+        ]
+      },
 
       radarChartData: {
         labels: ['Angry', 'Disgust', 'Fear', 'Happy', 'Sad', 'Surprise', 'Neutral'],
@@ -390,12 +414,13 @@ export default {
       }
     },
 
-    stopCamera() {
+    async stopCamera() {
       this.isProcessing = false;
       if (this.videoStream) {
         this.videoStream.getTracks().forEach(track => track.stop());
         this.videoStream = null;
         this.$refs.videoElement.srcObject = null;
+        await this.getRadarAnalysis();
       }
     },
     convertUTCToEasternTime(date) {
@@ -537,7 +562,53 @@ export default {
           console.log(error); 
       });
       
-    }
+    },
+    updateRadarChartData(data) {
+
+      console.log(data)
+      let radarData = [data.avg_angry,data.avg_disgust,data.avg_fear,data.avg_happy,data.avg_sad,data.avg_surprise,data.avg_neutral]
+      // this.radarChartData["datasets"]["data"]=radarData
+      this.radarAnalysisData={
+        labels: ['Average Angry', 'Average Disgust', 'Average Fear', 'Average Happy', 'Average Sad', 'Average Surprise', 'Average Neutral'],
+        datasets: [
+          {
+            label: 'Emotions',
+            backgroundColor: 'rgba(255,99,132,0.2)',
+            borderColor: 'rgba(255,99,132,1)',
+            pointBackgroundColor: 'rgba(255,99,132,1)',
+            pointBorderColor: '#fff',
+            pointHoverBackgroundColor: '#fff',
+            pointHoverBorderColor: 'rgba(255,99,132,1)',
+            data: radarData
+          }
+        ]
+      }
+    },
+    async getRadarAnalysis(user_id=this.userIDStored) {
+      // if(!this.isProcessing) return;
+      const ref = this;
+      console.log("Emotion Analysis for this meeting:");
+      const baseUrl= "http://localhost:8000/get_emotion_statistics"
+      axios({
+        method: 'get',
+        url: baseUrl, 
+        params: {
+          'user_id': user_id,
+        },
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      })
+      .then(function (response) {
+          console.log(response.data);
+          ref.updateRadarChartData(response.data);
+      })
+      .catch(function (error) {
+          console.log(error); 
+      });
+      
+    },
+    
     
   }
 };

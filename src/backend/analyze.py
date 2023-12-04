@@ -342,7 +342,7 @@ async def upload_file(user_id: int = Form(...),file: UploadFile = File(...)):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.get("/get_emotion_statistics/{user_id}", response_model=dict)
+@app.get("/get_emotion_statistics")
 def get_user_emotion_statistics_data(user_id: int):
     return get_user_emotion_statistics(user_id)
 
