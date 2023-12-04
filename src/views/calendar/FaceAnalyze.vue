@@ -507,7 +507,6 @@ export default {
       this.isLogIn=true
       this.userIDStored = data.id;
       this.userNameStored = data.name;
-      location.reload() 
     },
     async startDrag(event) {
       this.dragging = true;
