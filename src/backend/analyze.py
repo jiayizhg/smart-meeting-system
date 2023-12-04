@@ -1,4 +1,5 @@
 from datetime import datetime
+from operator import or_
 import random
 from pydantic import BaseModel
 import math
@@ -19,9 +20,9 @@ import shutil
 import uvicorn
 from fastapi.middleware.cors import CORSMiddleware
 import asyncio
-from sqlalchemy import create_engine, Column, Integer, String, ForeignKey, Float, DateTime, MetaData, Table, VARCHAR, text
+from sqlalchemy import create_engine, Column, Integer, String, ForeignKey, Float, DateTime, MetaData, Table, VARCHAR, text,Text
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy.orm import sessionmaker, Session, relationship
 from apscheduler.schedulers.background import BackgroundScheduler
 from sqlalchemy import create_engine, Column, Integer, Float, DateTime, Boolean,BigInteger,PrimaryKeyConstraint
 from sqlalchemy.ext.declarative import declarative_base
@@ -98,6 +99,21 @@ class UserCreate(BaseModel):
 class UserAuthenticate(BaseModel):
     id:int
     passowrd:str
+
+class Message(Base):
+    __tablename__ = 'messages'
+    id = Column(Integer, primary_key=True)
+    sender_id = Column(BigInteger, ForeignKey('users.id'), nullable=False)
+    receiver_id = Column(BigInteger, ForeignKey('users.id'), nullable=False)
+    content = Column(Text, nullable=False)
+    timestamp = Column(DateTime, server_default=func.now())
+    sender = relationship('UserData', foreign_keys=[sender_id])
+    receiver = relationship('UserData', foreign_keys=[receiver_id])
+
+class MessageCreate(BaseModel):
+    sender_id: int
+    receiver_id: int
+    content: str
 
 Base.metadata.create_all(bind=engine)
 
@@ -500,6 +516,26 @@ def get_user_status(username: str):
         }
         user_statuses.append(user_status)
     return user_statuses
+
+@app.post('/send_message')
+async def send_message(message: MessageCreate):
+    try:
+        db_message = Message(sender_id=message.sender_id, receiver_id=message.receiver_id, content=message.content)
+        print(message.sender_id)
+        print(message.receiver_id)
+        print(message.content)
+        db.add(db_message)
+        db.commit()
+        return {"message": "Message sent successfully"}
+    except Exception as e:
+        print(e)
+        raise HTTPException(status_code=400,detail="Wrong Message Status.")
+
+@app.get('/get_messages')
+async def get_messages(user_id: int):
+    messages = db.query(Message).filter(or_(Message.sender_id == user_id, Message.receiver_id == user_id)).all()
+    return messages
+    
 
 #get user statistics data using user_id from db
 def get_user_emotion_statistics(user_id: int):
