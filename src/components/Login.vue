@@ -1,5 +1,6 @@
 <template>
-  <div class="auth-container">
+  <div class="auth-container" v-if="!(user.name&&user.id)">
+
     <h2 v-if="isLoginMode">Login</h2>
     <h2 v-else>Register</h2>
 
@@ -18,8 +19,7 @@
       </div>
       <button type="submit">{{ isLoginMode ? 'Login' : 'Register' }}</button>
     </form>
-
-    <button @click="toggleMode">
+    <button @click="toggleMode" style="color: rgb(115, 230, 230); background-color: rgb(0, 98, 255);">
       {{ isLoginMode ? 'Switch to Register' : 'Switch to Login' }}
     </button>
 
@@ -29,20 +29,24 @@
   
   <script>
 import axios from 'axios';
-
+import store from '@/store';
   export default {
     data() {
       return {
         user: {
           id: '',
           name: '',
-          role: '',
-          is_temporary: false,
           password: ''
         },
         isLoginMode: true,
         message: ''
         };
+    },
+    mounted(){
+      store.commit('loadUserFast');
+      const user_store = store.getters.getUser;
+      this.user.id = user_store.id
+      this.user.name = user_store.name
     },
     methods: {
       async registerUser() {
@@ -61,6 +65,7 @@ import axios from 'axios';
         .then(function (response) {
             console.log(response.data);
             ref.message = `Registration successful! Your ID is: ${response.data.id}`;
+            ref.user.name ='';
             ref.isLoginMode = true;
         })
         .catch(function (error) {
@@ -76,10 +81,34 @@ import axios from 'axios';
             password: this.user.password
           });
           this.message = 'Login successful!';
+          store.commit('updateUserId', this.user.id);
+          await this.getUserName(this.user.id);
         } catch (error) {
           console.error(error);
           this.message = 'Login failed. Wrong ID or Password.';
         }
+      },
+      async getUserName(user_id) {
+        const ref=this;
+        axios({
+        method: 'get',
+        url: 'http://localhost:8000/get_current_user', 
+        params: {
+          'user_id': user_id,
+        },
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      })
+      .then(function (response) {
+          store.commit('updateUserName', response.data.name);
+          store.commit('saveUser');
+          ref.user.name = response.data.name;
+          ref.$emit('logInResult', ref.user);
+      })
+      .catch(function (error) {
+          console.log(error); 
+      });
       },
       toggleMode() {
         this.isLoginMode = !this.isLoginMode;
@@ -89,7 +118,7 @@ import axios from 'axios';
   </script>
 
 
-<style>
+<style scoped>
   .auth-container {
     max-width: 400px;
     margin: auto;

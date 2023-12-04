@@ -4,7 +4,7 @@ import random
 from pydantic import BaseModel
 import math
 from typing import List
-from fastapi import FastAPI, Request, UploadFile, File, HTTPException, APIRouter, HTTPException, Depends,Query
+from fastapi import FastAPI, Form, Request, UploadFile, File, HTTPException, APIRouter, HTTPException, Depends,Query
 from fastapi.responses import JSONResponse
 from werkzeug.security import generate_password_hash, check_password_hash
 import cv2
@@ -313,7 +313,7 @@ async def process_frame(file_path: str):
     return response_data
 
 @app.post("/process_frame")
-async def upload_file(file: UploadFile = File(...)):
+async def upload_file(user_id: int = Form(...),file: UploadFile = File(...)):
     try:
         temp_path = f"temp_frame_{file.filename}"
         with open(temp_path, "wb") as buffer:
@@ -334,7 +334,7 @@ async def upload_file(file: UploadFile = File(...)):
         #     print(d_data)
         e_res = max(zip(result['emotion'].values(),result['emotion'].keys()))[1]
 
-        insert_user_emotion_data(db, 1, angry_value,disgust_value, fear_value,happy_value, sad_value, surprise_value, neutral_value, e_res)
+        insert_user_emotion_data(db, user_id, angry_value,disgust_value, fear_value,happy_value, sad_value, surprise_value, neutral_value, e_res)
 
         return JSONResponse(content=result)
     except Exception as e:
@@ -418,7 +418,7 @@ def user_login(user:UserAuthenticate):
     else:
         raise HTTPException(status_code=400,detail="Wrong Status, Login and then logout again.")
 
-@app.get("/get_user_status")
+@app.get("/get_current_user")
 def get_current_user(user_id:int):
     user = db.query(UserData).filter(UserData.id == user_id).first()
     if not user:
