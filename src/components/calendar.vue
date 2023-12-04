@@ -3,7 +3,7 @@
 
       <div class="header">
       <div class="calendar-controls">
-        <div v-if="message" class="notification is-success">{{ message }}</div>
+
 
         <div class="box">
           <div class="field">
@@ -54,6 +54,10 @@
         </calendar-view>
       </div>
     </div>
+
+
+    <div v-if="message" class="notification is-success" v-html="message"></div>
+
 
       <!-- <div class="calendar-controls">
         <div v-if="message" class="notification is-success">{{ message }}</div>
@@ -358,10 +362,15 @@
            
               console.log("You clicked: ${d.toLocaleDateString()}")
           },
-          onClickItem() {
-              // this.message = `You clicked: ${e.title}`
+          onClickItem(e) {
+              // this.message = `Event Title: ${e.title}`
 
-              console.log("`You clicked: ${e.title}`")
+              this.message = `<b>Event Title:</b> ${e.title}<br>
+<b>Event Start Date and Time:</b> ${new Date(e.startDate).toLocaleString('en-US', { weekday: 'long', month: 'long', day: 'numeric', hour: 'numeric', minute: 'numeric', hour12: true })}<br>
+<b>Event End Date and Time:</b> ${new Date(e.endDate).toLocaleString('en-US', { weekday: 'long', month: 'long', day: 'numeric', hour: 'numeric', minute: 'numeric', hour12: true })}`;
+
+              console.log("`Event: ${e.title}`")
+              console.log(e)
           },
           setShowDate(d) {
               console.log("Changing calendar view to ${d.toLocaleDateString()}")
