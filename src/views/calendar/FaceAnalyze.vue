@@ -50,15 +50,69 @@
           Right Eye Focus:{{ eyes_status.right_eye_direction }}<br>
         </div>
       </div>
-      <p class="pheader"><b>Join Meeting Room</b></p>
+        <p class="pheader"><b>Join Meeting Room</b></p>
+      <div style="display: flex; flex-direction: row; justify-content: space-around;">
+        <div>
+        <form @submit.prevent="createMeetingRoom">
+          <div>
+            <label for="title">Title:&nbsp;</label>
+            <input type="text" id="title" v-model="meetingRoom.title">
+          </div>
+          <button type="submit" style="width: ">Create Meeting Room</button>
+        </form>
+        <div v-if="meeting_message">{{ meeting_message }}</div>
+        </div>
+        <div>
+        <form @submit.prevent="addUserToMeetingRoom">
+        <div>
+          <label for="meetingRoomId">Meeting Room ID:&nbsp;&nbsp;</label>
+          <input type="text" id="meetingRoomId" v-model="participant.meeting_room_id">
+        </div>
+        <div>
+          <label for="userId">User ID:&nbsp;&nbsp;&nbsp;&nbsp;</label>
+          <input type="text" id="userId" v-model="participant.user_id">
+        </div>
+        <button type="submit">Join By Room ID</button>
+        </form>
+        <div v-if="add_message">{{ add_message }}</div>
+        </div>
+      </div>
       <div>
       </div>
       <p class="pheader"><b>Invite and Manage Participants</b></p>
-
+      
+        
+        <div>
+            <form @submit.prevent="addUserToMeetingRoom">
+          <div>
+            <label for="meetingRoomId">Meeting Room ID:&nbsp;&nbsp;</label>
+            <input type="text" id="meetingRoomId" v-model="participant_2.meeting_room_id">
+          </div>
+          <div>
+            <label for="userId">User ID:&nbsp;&nbsp;&nbsp;&nbsp;</label>
+            <input type="text" id="userId" v-model="participant_2.user_id">
+          </div>
+          <div>
+            <label for="role">Role:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</label>
+            <input type="text" id="role" v-model="participant_2.role">
+          </div>
+          <button type="submit" style="width: 20%;">Add User</button>
+          </form>
+          <div v-if="add_message_2">{{ add_message_2 }}</div>
+        
+      </div>
       <p class="pheader"><b>Chat Room</b></p>
       <div style="display: flex; flex-direction: row; justify-content:space-around; width:100%;">
         <div style="width: 35%;">
           <p class="pheader">Chat With Target</p>
+          <div v-if="participants.length > 0">
+            <h2>Participants</h2>
+            <ul>
+              <li v-for="participant in participants" :key="participant.id">
+                User ID: {{ participant.user_id }}, Role: {{ participant.role }}
+              </li>
+            </ul>
+          </div>
         </div>
         <div style="width: 35%;">
           <p class="pheader" >Chat In Meeting Room</p>
@@ -241,6 +295,25 @@ export default {
       
       selectedEmotion:'neutral',
 
+      meetingRoom: {
+        title: '',
+        host_id: ''
+      },
+      meeting_message: '',
+      participant: {
+        meeting_room_id: '',
+        user_id: '',
+        role: 'participant'
+      },
+      add_message:'',
+      participant_2: {
+        meeting_room_id: '',
+        user_id: '',
+        role: ''
+      },
+      add_message_2:'',
+      meetingRoomId: null,
+      participants: [],
       radarAnalysisData: {
         labels: ['Angry', 'Disgust', 'Fear', 'Happy', 'Sad', 'Surprise', 'Neutral'],
         datasets: [
@@ -374,6 +447,39 @@ export default {
   // },
 
   methods: {
+    createMeetingRoom() {
+      this.meetingRoom.host_id=this.userIDStored;
+      axios.post('http://localhost:8000/create_meeting_room', this.meetingRoom)
+        .then(response => {
+          this.meeting_message = response.data.message;
+          this.meetingRoomId=response.meeting_room_id;
+        })
+        .catch(error => {
+          console.error('There was an error!', error);
+          this.meeting_message = error.response.data.detail || 'Error creating meeting room';
+        });
+    },
+    addUserToMeetingRoom() {
+      this.meetingRoomId=this.participant.id
+      axios.post('http://localhost:8000/add_user_to_meeting_room', this.participant)
+        .then(response => {
+          this.add_message = response.data.message;
+        })
+        .catch(error => {
+          console.error('There was an error!', error);
+          this.add_message = error.response.data.detail || 'Error adding user to meeting room';
+        });
+    },
+    addUserToMeetingRoom_2() {
+      axios.post('http://localhost:8000/add_user_to_meeting_room', this.participant_2)
+        .then(response => {
+          this.add_message_2 = response.data.message;
+        })
+        .catch(error => {
+          console.error('There was an error!', error);
+          this.add_message_2 = error.response.data.detail || 'Error adding user to meeting room';
+        });
+    },
     handleDataFromChild(data){
       console.log('LogIn result:', data);
       this.isLogIn=true
@@ -419,10 +525,16 @@ export default {
           this.$refs.videoElement.srcObject = stream;
         });
         this.isProcessing = true;
-        this.startDate= this.formatDateToEasternTime(new Date());
+        // this.startDate= this.formatDateToEasternTime(new Date());
+        // this.endDate= new Date();
+        // this.endDate.setTime(this.endDate.getTime() + (3 * 60 * 60 * 1000));
+        // this.endDate= this.formatDateToEasternTime(this.endDate);
+        this.startDate= new Date();
+        this.startDate.setTime(this.startDate.getTime() + (5 * 60 * 60 * 1000));
+        this.startDate= this.formatDateToEasternTime(this.startDate);
         this.endDate= new Date();
-        this.endDate.setTime(this.endDate.getTime() + (3 * 60 * 60 * 1000));
-        this.endDate= this.formatDateToEasternTime(this.endDate);
+        this.endDate.setTime(this.endDate.getTime() + (8 * 60 * 60 * 1000));
+        this.endDate= this.formatDateToEasternTime(this.endDate);  
         this.processVideoFrame();
       } catch (error) {
         console.error("Error starting camera:", error);

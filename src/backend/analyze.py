@@ -31,22 +31,25 @@ from urllib.parse import quote_plus
 Base = declarative_base()
 
 
-raw_password = ""
-encoded_password = quote_plus(raw_password)
-# connection_string = f"mysql+pymysql://root:{encoded_password}@localhost:3306/meeting_db"
-# engine = create_engine(connection_string)
+# raw_password = "@mysql@Qazwsx123"
+# encoded_password = quote_plus(raw_password)
+# server_connection_string = f"mysql+pymysql://root:{encoded_password}@localhost:3306/"
+# engine = create_engine(server_connection_string)
 
-server_connection_string = f"mysql+pymysql://root:{encoded_password}@localhost:3306/"
-engine = create_engine(server_connection_string)
+# with engine.connect() as connection:
+#     connection.execute(text("CREATE DATABASE IF NOT EXISTS meeting_db"))
+# database_connection_string = f"mysql+pymysql://root:{encoded_password}@localhost:3306/meeting_db"
+# engine.dispose()
+# engine = create_engine(database_connection_string)
 
-with engine.connect() as connection:
-    connection.execute(text("CREATE DATABASE IF NOT EXISTS meeting_db"))
-database_connection_string = f"mysql+pymysql://root:{encoded_password}@localhost:3306/meeting_db"
-engine.dispose()
+
+# print(engine)
+
+password = "?Dong15101025750"
+endpoint = "db-aws-meeting.cz2dx8yqlhsp.us-east-1.rds.amazonaws.com:3306"
+database_connection_string = f"mysql+pymysql://admin:{password}@{endpoint}/meeting_db"
 engine = create_engine(database_connection_string)
 
-
-print(engine)
 
 Base = declarative_base()
 
@@ -103,12 +106,14 @@ class UserAuthenticate(BaseModel):
 class Message(Base):
     __tablename__ = 'messages'
     id = Column(Integer, primary_key=True)
-    sender_id = Column(BigInteger, ForeignKey('users.id'), nullable=False)
-    receiver_id = Column(BigInteger, ForeignKey('users.id'), nullable=False)
+    # sender_id = Column(BigInteger, ForeignKey('users.id'), nullable=False)
+    # receiver_id = Column(BigInteger, ForeignKey('users.id'), nullable=False)
+    sender_id = Column(BigInteger, nullable=False)
+    receiver_id = Column(BigInteger, nullable=False)
     content = Column(Text, nullable=False)
     timestamp = Column(DateTime, server_default=func.now())
-    sender = relationship('UserData', foreign_keys=[sender_id])
-    receiver = relationship('UserData', foreign_keys=[receiver_id])
+    # sender = relationship('UserData', foreign_keys=[sender_id])
+    # receiver = relationship('UserData', foreign_keys=[receiver_id])
 
 class MessageCreate(BaseModel):
     sender_id: int
@@ -118,7 +123,8 @@ class MessageCreate(BaseModel):
 class MeetingRoom(Base):
     __tablename__ = 'meeting_rooms'
     id = Column(Integer, primary_key=True, autoincrement=True)
-    host_id = Column(BigInteger, ForeignKey('users.id'), nullable=False)
+    # host_id = Column(BigInteger, ForeignKey('users.id'), nullable=False)
+    host_id = Column(BigInteger, nullable=False)
     title = Column(VARCHAR(100), nullable=False)
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
@@ -127,16 +133,20 @@ class MeetingRoom(Base):
 class MeetingRoomParticipant(Base):
     __tablename__ = 'meeting_room_participants'
     id = Column(Integer, primary_key=True, autoincrement=True)
-    meeting_room_id = Column(Integer, ForeignKey('meeting_rooms.id'), nullable=False)
-    user_id = Column(BigInteger, ForeignKey('users.id'), nullable=False)
+    # meeting_room_id = Column(Integer, ForeignKey('meeting_rooms.id'), nullable=False)
+    # user_id = Column(BigInteger, ForeignKey('users.id'), nullable=False)
+    meeting_room_id = Column(Integer, nullable=False)
+    user_id = Column(BigInteger, nullable=False)
     role = Column(VARCHAR(50), nullable=False, default='participant') # Roles: 'host', 'participant'
     joined_at = Column(DateTime, server_default=func.now())
 
 class MeetingRoomMessage(Base):
     __tablename__ = 'meeting_room_messages'
     id = Column(Integer, primary_key=True, autoincrement=True)
-    meeting_room_id = Column(Integer, ForeignKey('meeting_rooms.id'), nullable=False)
-    sender_id = Column(BigInteger, ForeignKey('users.id'), nullable=False)
+    # meeting_room_id = Column(Integer, ForeignKey('meeting_rooms.id'), nullable=False)
+    # sender_id = Column(BigInteger, ForeignKey('users.id'), nullable=False)
+    meeting_room_id = Column(Integer, nullable=False)
+    sender_id = Column(BigInteger, nullable=False)
     content = Column(Text, nullable=False)
     timestamp = Column(DateTime, server_default=func.now())
 

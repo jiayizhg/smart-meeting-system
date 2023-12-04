@@ -4,7 +4,7 @@
     <router-link to="/"><font-awesome-icon :icon="['fas', 'house']" /></router-link>
   
     <router-link to="/scheduling"><font-awesome-icon :icon="['fas', 'circle-user']"  class="user"/></router-link>
-    <router-link to="/anaylze"><font-awesome-icon :icon="['fas', 'circle-user']"  class="user"/></router-link>
+    <router-link to="/anaylze"><font-awesome-icon :icon="['fas', 'face-grin-stars']"  class="user"/></router-link>
   </div>
 </template>
 
