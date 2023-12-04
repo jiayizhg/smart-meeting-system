@@ -50,25 +50,23 @@
           Right Eye Focus:{{ eyes_status.right_eye_direction }}<br>
         </div>
       </div>
-      <p style="
-      font-family: 'Arial', sans-serif;
-      font-size: 16px;
-      color: #333;
-      background-color: #f2f2f2;
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      padding: 10px 20px;
-      margin: 10px;
-      transition: all 0.3s ease;
+      <p class="pheader"><b>Join Meeting Room</b></p>
+      <div>
+      </div>
+      <p class="pheader"><b>Invite and Manage Participants</b></p>
 
-      &:hover {
-          background-color: #e8e8e8;
-          color: #555;
-          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-      }">
-      <b>Select Your Analyze Camera</b>
-      </p>
-      <select v-model="selectedCameraId">
+      <p class="pheader"><b>Chat Room</b></p>
+      <div style="display: flex; flex-direction: row; justify-content:space-around; width:100%;">
+        <div style="width: 35%;">
+          <p class="pheader">Chat With Target</p>
+        </div>
+        <div style="width: 35%;">
+          <p class="pheader" >Chat In Meeting Room</p>
+        </div>
+      </div>
+
+      <p class="pheader"><b>Select Your Analyze Camera</b></p>
+      <select v-model="selectedCameraId" class="elegant-select" style="width: 35%;">
         <option v-for="camera in cameras" :key="camera.deviceId" :value="camera.deviceId">
           {{ camera.label }}
         </option>
@@ -127,6 +125,23 @@
   }
 }
 
+.pheader{
+  font-family: 'Arial', sans-serif;
+  font-size: 16px;
+  color: #333;
+  background-color: #f2f2f2;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 10px 20px;
+  margin: 10px;
+  transition: all 0.3s ease;
+}
+
+.pheader:hover{
+  background-color: #e8e8e8;
+  color: #555;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
 .chart-container {
   display: flex;
   justify-content: center;
