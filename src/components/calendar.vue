@@ -359,7 +359,7 @@
               return new Date(t.getFullYear(), t.getMonth(), d, h || 0, m || 0)
           },
           onClickDay() {
-           
+              this.message = ""
               console.log("You clicked: ${d.toLocaleDateString()}")
           },
           onClickItem(e) {

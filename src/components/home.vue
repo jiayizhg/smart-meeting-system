@@ -1,8 +1,19 @@
 <template>
   
    <div class="Home">
-    <h1>Smart Meeting System</h1>
+    <!-- <h1>Smart Meeting System</h1> -->
 
+
+
+    <div class="center-content">
+      <h1>
+        <font-awesome-icon :icon="['fas', 'hand-peace']" class="left-icon" />
+        Welcome!
+      </h1>
+      <p>We Can't Wait to Show You Around!</p>
+    </div>
+
+    <button class="explore-button">Explore</button>
   <!-- <div class="container">
     <div class="left">
       <form >
@@ -35,6 +46,8 @@
       current-view="workWeek"
     /> -->
     <calendar />
+
+    
 </div>
 </template>
 
@@ -84,6 +97,34 @@ const SCOPES = 'https://www.googleapis.com/auth/calendar'
  -->
 
 <style scoped>
+
+.Home {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh; /* Adjust the height as needed */
+}
+
+.top-left-icon {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  font-size: 24px; /* Adjust the font size as needed */
+}
+
+/* Styling for centered content */
+.center-content {
+  text-align: center;
+ /* Adjust the margin as needed */
+}
+
+/* Styling for centered icon */
+.centered-icon {
+  font-size: 3em; /* Adjust the font size as needed */
+}
+
+
+
 .long-title h3 {
   font-family:
     'Segoe UI Light',
