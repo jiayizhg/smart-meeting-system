@@ -1,5 +1,6 @@
 <template>
   <div>
+    <Login/>
     <RadarChart v-if="emotion" :width=500 :height=500
       :external-chart-data="radarChartData" :external-chart-options="radarChartOptions"/>
     <LineChart :width=500 :height=500
@@ -65,12 +66,14 @@
 import axios from "axios";
 import RadarChart from '../../components/RadarChart.vue'
 import LineChart from '../../components/LineChart.vue'
+import Login from "../../components/Login.vue";
 
 export default {
   components: {
     RadarChart,
-    LineChart
-  },
+    LineChart,
+    Login
+},
   data() {
     return {
       videoStream: null,
