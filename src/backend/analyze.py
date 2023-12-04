@@ -115,6 +115,46 @@ class MessageCreate(BaseModel):
     receiver_id: int
     content: str
 
+class MeetingRoom(Base):
+    __tablename__ = 'meeting_rooms'
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    host_id = Column(BigInteger, ForeignKey('users.id'), nullable=False)
+    title = Column(VARCHAR(100), nullable=False)
+    created_at = Column(DateTime, server_default=func.now())
+    updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
+    is_active = Column(Boolean, default=True, nullable=False)
+
+class MeetingRoomParticipant(Base):
+    __tablename__ = 'meeting_room_participants'
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    meeting_room_id = Column(Integer, ForeignKey('meeting_rooms.id'), nullable=False)
+    user_id = Column(BigInteger, ForeignKey('users.id'), nullable=False)
+    role = Column(VARCHAR(50), nullable=False, default='participant') # Roles: 'host', 'participant'
+    joined_at = Column(DateTime, server_default=func.now())
+
+class MeetingRoomMessage(Base):
+    __tablename__ = 'meeting_room_messages'
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    meeting_room_id = Column(Integer, ForeignKey('meeting_rooms.id'), nullable=False)
+    sender_id = Column(BigInteger, ForeignKey('users.id'), nullable=False)
+    content = Column(Text, nullable=False)
+    timestamp = Column(DateTime, server_default=func.now())
+
+class MeetingRoomCreate(BaseModel):
+    host_id: int
+    title: str
+
+class MeetingRoomParticipantCreate(BaseModel):
+    meeting_room_id: int
+    user_id: int
+    role: str
+
+class MeetingRoomMessageCreate(BaseModel):
+    meeting_room_id: int
+    sender_id: int
+    content: str
+
+
 Base.metadata.create_all(bind=engine)
 
 
@@ -521,9 +561,6 @@ def get_user_status(username: str):
 async def send_message(message: MessageCreate):
     try:
         db_message = Message(sender_id=message.sender_id, receiver_id=message.receiver_id, content=message.content)
-        print(message.sender_id)
-        print(message.receiver_id)
-        print(message.content)
         db.add(db_message)
         db.commit()
         return {"message": "Message sent successfully"}
@@ -535,7 +572,82 @@ async def send_message(message: MessageCreate):
 async def get_messages(user_id: int):
     messages = db.query(Message).filter(or_(Message.sender_id == user_id, Message.receiver_id == user_id)).all()
     return messages
+
+@app.post("/create_meeting_room")
+def create_meeting_room(meeting_room: MeetingRoomCreate):
+    try:
+        new_meeting_room = MeetingRoom(host_id=meeting_room.host_id, title=meeting_room.title)
+        db.add(new_meeting_room)
+        db.commit()
+        new_participant = MeetingRoomParticipant(meeting_room_id=new_meeting_room.id, user_id=meeting_room.host_id, role="host")
+        db.add(new_participant)
+        db.commit()
+        return {"message": "Meeting room created successfully", "meeting_room_id": new_meeting_room.id}
+    except Exception as e:
+        print(e)
+        raise HTTPException(status_code=400,detail="Create meeting room failed")
+
+@app.post("/add_user_to_meeting_room")
+def add_user_to_meeting_room(participant: MeetingRoomParticipantCreate):
+    try:
+        new_participant = MeetingRoomParticipant(meeting_room_id=participant.meeting_room_id, user_id=participant.user_id, role=participant.role)
+        db.add(new_participant)
+        db.commit()
+        return {"message": "User added to meeting room successfully"}
+    except Exception as e:
+        print(e)
+        raise HTTPException(status_code=400,detail="Add user "+str(participant.user_id)+" to meeting room failed")
     
+@app.post("change_role_in_meeting_room")
+def change_role_in_meeting_room(participant: MeetingRoomParticipantCreate):
+    meeting_user = db.query(MeetingRoomParticipant).filter(MeetingRoomParticipant.user_id == participant.user_id).first()
+    if meeting_user:
+        meeting_user.role = participant.role
+        db.commit()
+        return {
+            "message":"Change Role successful"
+        }
+    else:
+        raise HTTPException(status_code=400,detail="Change Role Failed")
+    
+
+
+@app.get("/meeting_room_participants")
+def get_meeting_room_participants(meeting_room_id: int):
+    participants = db.query(MeetingRoomParticipant).filter(MeetingRoomParticipant.meeting_room_id == meeting_room_id).all()
+    return participants
+   
+@app.post("/send_room_message")
+def send_message(message: MeetingRoomMessageCreate):
+    try:
+        new_message = MeetingRoomMessage(meeting_room_id=message.meeting_room_id, sender_id=message.sender_id, content=message.content)
+        db.add(new_message)
+        db.commit()
+        return {"message": "Message sent successfully"}
+    except Exception as e:
+        print(e)
+        raise HTTPException(status_code=400,detail="Send message in meeting room failed")
+
+
+@app.get("/get_room_messages")
+def get_room_messages(meeting_room_id: int):
+    messages = db.query(MeetingRoomMessage).filter(MeetingRoomMessage.meeting_room_id == meeting_room_id).all()
+    return messages
+
+@app.post("/leave_meeting_room")
+def leave_meeting_room(meeting_room_id: int, user_id: int):
+    try:
+        db.query(MeetingRoomParticipant).filter(MeetingRoomParticipant.meeting_room_id == meeting_room_id, MeetingRoomParticipant.user_id == user_id).delete()
+        db.commit()
+        remaining_hosts = db.query(MeetingRoomParticipant).filter(MeetingRoomParticipant.meeting_room_id == meeting_room_id, MeetingRoomParticipant.role == 'host').count()
+        if remaining_hosts == 0:
+            meeting_room = db.query(MeetingRoom).filter(MeetingRoom.id == meeting_room_id).first()
+            meeting_room.is_active = False
+            db.commit()
+        return {"message": "Left meeting room successfully"}
+    except Exception as e:
+        print(e)
+        raise HTTPException(status_code=400,detail="Leave meeting room failed")
 
 #get user statistics data using user_id from db
 def get_user_emotion_statistics(user_id: int):
