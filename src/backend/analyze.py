@@ -163,51 +163,6 @@ db = SessionLocal()
 
 
 
-# new_user_data = UserEmotionData(
-#     angry=0.1,
-#     disgust=0.2,
-#     fear=0.3,
-#     happy=0.4,
-#     sad=0.5,
-#     surprise=0.6,
-#     neutral=0.7,
-#     emotion_result=0.8
-# )
-
-# db.add(new_user_data)
-# db.commit()
-
-# # 关闭会话
-# db.close()
-
-
-#Define Database
-# class User(Base):
-#     __tablename__ = 'users'
-#     id = Column(Integer, primary_key=True)
-#     name = Column(String)
-#     role = Column(String)
-#     is_online = Column(bool, default=False)
-
-# class MeetingRoom(Base):
-#     __tablename__ = 'meeting_rooms'
-#     id = Column(Integer, primary_key=True)
-#     name = Column(String)
-#     creator_id = Column(Integer, ForeignKey('users.id'))
-#     start_time = Column(datetime)
-#     end_time = Column(datetime)
-
-# class UserMeetingRoom(Base):
-#     __tablename__ = 'user_meeting_room'
-#     user_id = Column(Integer, ForeignKey('users.id'), primary_key=True)
-#     meeting_room_id = Column(Integer, ForeignKey('meeting_rooms.id'), primary_key=True)
-#     role = Column(String)
-
-
-# engine = create_engine('postgresql://aaa:111@localhost/mydb')
-# SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-
 app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
@@ -233,15 +188,6 @@ app.add_middleware(
 #     finally:
 #         db.close()
 
-# def get_current_user(user_id: int, db: Session = Depends(get_db)) -> User:
-#     user = db.query(User).filter(User.id == user_id).first()
-#     if not user:
-#         raise HTTPException(status_code=404, detail="User not found")
-#     return user
-
-# def is_host(user: User) -> bool:
-#     return user.role == 'host'
-
 # def cleanup_users(db: Session):
 #     current_time = datetime.now()
 #     ended_meetings = db.query(MeetingRoom).filter(MeetingRoom.end_time < current_time).all()
@@ -259,78 +205,6 @@ app.add_middleware(
 # #     scheduler = BackgroundScheduler()
 # #     scheduler.add_job(cleanup_users, 'interval', minutes=5) 
 # #     scheduler.start()
-
-# @app.on_event("startup")
-# async def startup_event():
-#     start_scheduler()
-
-# @app.post("/users/")
-# def create_user(name: str, role: str, db: Session = Depends(get_db)):
-#     db_user = User(name=name, role=role)
-#     db.add(db_user)
-#     db.commit()
-#     db.refresh(db_user)
-#     return db_user
-
-# @app.post("/meeting_rooms/")
-# def create_meeting_room(name: str, creator_id: int, db: Session = Depends(get_db)):
-#     db_meeting_room = MeetingRoom(name=name, creator_id=creator_id)
-#     db.add(db_meeting_room)
-#     db.commit()
-#     db.refresh(db_meeting_room)
-#     return db_meeting_room
-
-# @app.post("/join_meeting_room/")
-# async def join_meeting_room(request: Request, db: Session = Depends(get_db)):
-#     data = await request.json()
-#     username = data.get("username")
-#     meeting_room_id = data.get("meeting_room_id")
-
-#     if not username or not meeting_room_id:
-#         raise HTTPException(status_code=400, detail="Missing username or meeting room ID")
-#     user = db.query(User).filter(User.name == username).first()
-#     if not user:
-#         user = User(name=username, role="employee", is_online=True)
-#         db.add(user)
-#         db.commit()
-#         db.refresh(user)
-#     user_id = data.get("user_id")
-#     role= data.get("role")
-#     db_join = UserMeetingRoom(user_id=user_id, meeting_room_id=meeting_room_id, role=role)
-#     db.add(db_join)
-#     db.commit()
-#     db.refresh(db_join)
-#     return db_join
-
-
-# @app.get("/users/", response_model=List[User])
-# def get_users(skip: int = 0, limit: int = 10, db: Session = Depends(get_db)):
-#     users = db.query(User).offset(skip).limit(limit).all()
-#     return users
-
-# @app.get("/meeting_rooms/", response_model=List[MeetingRoom])
-# def get_meeting_rooms(skip: int = 0, limit: int = 10, db: Session = Depends(get_db)):
-#     meeting_rooms = db.query(MeetingRoom).offset(skip).limit(limit).all()
-#     return meeting_rooms
-
-# @app.get("/meeting_room_members/{meeting_room_id}", response_model=List[UserMeetingRoom])
-# def get_meeting_room_members(meeting_room_id: int, db: Session = Depends(get_db)):
-#     members = db.query(UserMeetingRoom).filter(UserMeetingRoom.meeting_room_id == meeting_room_id).all()
-#     return members
-
-# @app.put("/update_meeting_room_member/")
-# def update_member_role(user_id: int, meeting_room_id: int, role: str, db: Session = Depends(get_current_user)):
-#     member = db.query(UserMeetingRoom).filter(
-#         UserMeetingRoom.user_id == user_id, 
-#         UserMeetingRoom.meeting_room_id == meeting_room_id
-#     ).first()
-#     if not member:
-#         raise HTTPException(status_code=404, detail="Member not found")
-#     if not is_host(get_current_user):
-#         raise HTTPException(status_code=403, detail="Insufficient permissions")
-#     member.role = role
-#     db.commit()
-#     return member
 
 
 #Facial Part
@@ -543,6 +417,14 @@ def user_login(user:UserAuthenticate):
         }
     else:
         raise HTTPException(status_code=400,detail="Wrong Status, Login and then logout again.")
+
+@app.get("/get_user_status")
+def get_current_user(user_id:int):
+    user = db.query(UserData).filter(UserData.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    user.password=""
+    return user
 
 @app.get("/get_user_status")
 def get_user_status(username: str):
