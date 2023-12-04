@@ -1,9 +1,11 @@
 from datetime import datetime
+import random
 from pydantic import BaseModel
 import math
 from typing import List
 from fastapi import FastAPI, Request, UploadFile, File, HTTPException, APIRouter, HTTPException, Depends,Query
 from fastapi.responses import JSONResponse
+from werkzeug.security import generate_password_hash, check_password_hash
 import cv2
 import json
 from flask_cors import cross_origin
@@ -85,19 +87,16 @@ class UserData(Base):
     id = Column(BigInteger, primary_key=True)
     name = Column(VARCHAR(100),nullable=False)
     role = Column(VARCHAR(50),nullable=False)
-    password = Column(VARCHAR(100),nullable=False)
-    is_temporary = Column(Boolean, default=False,nullable=False)
-
+    password = Column(VARCHAR(1024),nullable=False)
+    is_online = Column(Boolean, default=False,nullable=False)
+    last_active_time = Column(DateTime, server_default=func.now(), onupdate=func.now())
 
 class UserCreate(BaseModel):
-    id:int
     name:str
-    role:str
-    password:str
-    is_temporary:bool
+    passowrd:str
 
 class UserAuthenticate(BaseModel):
-    name:str
+    id:int
     passowrd:str
 
 Base.metadata.create_all(bind=engine)
@@ -132,7 +131,7 @@ db = SessionLocal()
 #     id = Column(Integer, primary_key=True)
 #     name = Column(String)
 #     role = Column(String)
-#     is_temporary = Column(bool, default=False)
+#     is_online = Column(bool, default=False)
 
 # class MeetingRoom(Base):
 #     __tablename__ = 'meeting_rooms'
@@ -184,8 +183,8 @@ app.add_middleware(
 #         raise HTTPException(status_code=404, detail="User not found")
 #     return user
 
-# def is_boss(user: User) -> bool:
-#     return user.role == 'boss'
+# def is_host(user: User) -> bool:
+#     return user.role == 'host'
 
 # def cleanup_users(db: Session):
 #     current_time = datetime.now()
@@ -196,7 +195,7 @@ app.add_middleware(
 #             User.id.in_(
 #                 db.query(UserMeetingRoom.user_id).filter(UserMeetingRoom.meeting_room_id == meeting.id)
 #             ),
-#             User.is_temporary == True
+#             User.is_online == True
 #         ).delete()
 #         db.commit()
 
@@ -235,7 +234,7 @@ app.add_middleware(
 #         raise HTTPException(status_code=400, detail="Missing username or meeting room ID")
 #     user = db.query(User).filter(User.name == username).first()
 #     if not user:
-#         user = User(name=username, role="employee", is_temporary=True)
+#         user = User(name=username, role="employee", is_online=True)
 #         db.add(user)
 #         db.commit()
 #         db.refresh(user)
@@ -271,7 +270,7 @@ app.add_middleware(
 #     ).first()
 #     if not member:
 #         raise HTTPException(status_code=404, detail="Member not found")
-#     if not is_boss(get_current_user):
+#     if not is_host(get_current_user):
 #         raise HTTPException(status_code=403, detail="Insufficient permissions")
 #     member.role = role
 #     db.commit()
@@ -439,20 +438,68 @@ def get_user_distraction_count(user_id: int, distraction_type: str, start_date: 
     print(get_user_distraction_type_count(user_id, distraction_type, start_date, end_date))
     return get_user_distraction_type_count(user_id, distraction_type, start_date, end_date)
 
+def generate_user_id():
+    while True:
+        user_id = str(random.randint(100000, 999999))
+        query_conditions = [
+            UserData.id == user_id
+        ]
+        result = (
+            db.query(UserData)
+            .filter(*query_conditions)
+            .all()
+        )
+        if not result:
+            return user_id
 
 @app.post("/add_user")
 def add_user(user:UserCreate):
-    insert_user_data(db, user.id,user.name,user.role,user.is_temporary,user.password)
+    user_id = generate_user_id()
+    print(user_id)
+    hashed_password = generate_password_hash(user.passowrd)
+    # insert_user_data(db, user.id,user.name,user.role,user.is_online,user.password)
+    insert_user_data(db, user_id,user.name,"Participant",False,hashed_password)
+    return {
+        "id":{user_id}
+    }
+
 
 @app.post("/user_login")
 def user_login(user:UserAuthenticate):
-    db_user = db.query(UserData).filter(UserData.name == user.name).first()
-    if db_user and user.passowrd == db_user.password:
+    db_user = db.query(UserData).filter(UserData.id == user.id).first()
+    if db_user and check_password_hash(db_user.password, user.passowrd):
+        db_user.is_online = True
+        db.commit()
         return {
             "message":"Login successful"
         }
     else:
-        raise HTTPException(status_code=400,detail="Wrong password")
+        raise HTTPException(status_code=400,detail="Wrong ID or Password.")
+
+@app.post("/user_logout")
+def user_login(user:UserAuthenticate):
+    db_user = db.query(UserData).filter(UserData.id == user.id).first()
+    if db_user and check_password_hash(db_user.password, user.passowrd):
+        db_user.is_online = False
+        db.commit()
+        return {
+            "message":"Logout successful"
+        }
+    else:
+        raise HTTPException(status_code=400,detail="Wrong Status, Login and then logout again.")
+
+@app.get("/get_user_status")
+def get_user_status(username: str):
+    users = db.query(UserData).filter(UserData.name == username).all()
+    user_statuses = []
+    for user in users:
+        user_status = {
+            "id": user.id,
+            "name": user.name,
+            "is_online": user.is_online
+        }
+        user_statuses.append(user_status)
+    return user_statuses
 
 #get user statistics data using user_id from db
 def get_user_emotion_statistics(user_id: int):
@@ -605,12 +652,12 @@ def insert_user_distracted_data(db, user_id,distracted_result):
     except Exception as e:
         print(e)
 
-def insert_user_data(db, id, name, role, is_temporary,password):
+def insert_user_data(db, id, name, role, is_online,password):
     user_data = UserData(
         id = id,
         name = name,
         role = role,
-        is_temporary = is_temporary,
+        is_online = is_online,
         password = password
     )
     try:
