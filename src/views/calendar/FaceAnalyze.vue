@@ -105,11 +105,16 @@
       <div style="display: flex; flex-direction: row; justify-content:space-around; width:100%;">
         <div style="width: 35%;">
           <p class="pheader">Chat With Target</p>
+          <div>
+            <label for="meetingRoomId">Meeting Room ID:</label>
+            <input type="number" id="meetingRoomId" v-model="meetingRoomId">
+            <button @click="fetchParticipants">Get Participants</button>
+          </div>
           <div v-if="participants.length > 0">
-            <h2>Participants</h2>
+            <h4><b>Participants</b></h4>
             <ul>
               <li v-for="participant in participants" :key="participant.id">
-                User ID: {{ participant.user_id }}, Role: {{ participant.role }}
+                <b>User ID:</b> {{ participant.user_id }}, <b>Role:</b> {{ participant.role }}
               </li>
             </ul>
           </div>
@@ -480,11 +485,29 @@ export default {
           this.add_message_2 = error.response.data.detail || 'Error adding user to meeting room';
         });
     },
+    fetchParticipants() {
+      if (this.meetingRoomId) {
+        axios.get(`http://localhost:8000/meeting_room_participants?meeting_room_id=${this.meetingRoomId}`)
+          .then(response => {
+            this.participants = response.data;
+            if (this.participants.length === 0) {
+              this.message = 'No participants found for this meeting room.';
+            }
+          })
+          .catch(error => {
+            console.error('There was an error!', error);
+            this.message = error.response.data.detail || 'Error fetching participants';
+          });
+      } else {
+        this.message = 'Please enter a meeting room ID.';
+      }
+    },
     handleDataFromChild(data){
       console.log('LogIn result:', data);
       this.isLogIn=true
       this.userIDStored = data.id;
       this.userNameStored = data.name;
+      location.reload() 
     },
     async startDrag(event) {
       this.dragging = true;
