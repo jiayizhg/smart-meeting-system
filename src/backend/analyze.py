@@ -94,11 +94,11 @@ class UserData(Base):
 
 class UserCreate(BaseModel):
     name:str
-    passowrd:str
+    password:str
 
 class UserAuthenticate(BaseModel):
     id:int
-    passowrd:str
+    password:str
 
 class Message(Base):
     __tablename__ = 'messages'
@@ -386,7 +386,7 @@ def generate_user_id():
 def add_user(user:UserCreate):
     user_id = generate_user_id()
     print(user_id)
-    hashed_password = generate_password_hash(user.passowrd)
+    hashed_password = generate_password_hash(user.password)
     # insert_user_data(db, user.id,user.name,user.role,user.is_online,user.password)
     insert_user_data(db, user_id,user.name,"Participant",False,hashed_password)
     return {
@@ -397,7 +397,7 @@ def add_user(user:UserCreate):
 @app.post("/user_login")
 def user_login(user:UserAuthenticate):
     db_user = db.query(UserData).filter(UserData.id == user.id).first()
-    if db_user and check_password_hash(db_user.password, user.passowrd):
+    if db_user and check_password_hash(db_user.password, user.password):
         db_user.is_online = True
         db.commit()
         return {
@@ -409,7 +409,7 @@ def user_login(user:UserAuthenticate):
 @app.post("/user_logout")
 def user_login(user:UserAuthenticate):
     db_user = db.query(UserData).filter(UserData.id == user.id).first()
-    if db_user and check_password_hash(db_user.password, user.passowrd):
+    if db_user and check_password_hash(db_user.password, user.password):
         db_user.is_online = False
         db.commit()
         return {
