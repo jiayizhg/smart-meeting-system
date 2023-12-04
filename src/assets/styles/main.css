@@ -1,23 +1,26 @@
-
-/* button {
+button {
   margin-top: 20px;
   background-color: #2D8CFF;
   color: #ffffff;
   text-decoration: none;
-  padding-top: 10px;
-  padding-bottom: 10px;
-  padding-left: 40px;
-  padding-right: 40px;
+  padding: 5px 10px;
   display: inline-block;
-  border-radius: 10px;
+  border-radius: 50px; /* Adjust the border-radius to make the button round */
   cursor: pointer;
   border: none;
   outline: none;
-} */
+  transition: background-color 0.3s ease;
+  border-radius: 50px !important;
+}
 
-/* button:hover {
+button:hover {
   background-color: #2681F2;
-} */
+}
+
+button:active {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
 
 #app {
   width: 100%;

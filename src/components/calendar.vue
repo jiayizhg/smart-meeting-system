@@ -1,17 +1,11 @@
 <template>
-    <div id="app">
+    <div id="calendar_app">
 
-    <div>
-   
-   </div>
-
-
+      <div class="header">
       <div class="calendar-controls">
         <div v-if="message" class="notification is-success">{{ message }}</div>
-  
+
         <div class="box">
-          <h4 class="title is-5">Play with the options!</h4>
-  
           <div class="field">
             <label class="label">Period UOM</label>
             <div class="control">
@@ -24,6 +18,64 @@
               </div>
             </div>
           </div>
+        </div>
+      </div>
+    </div>
+
+
+<div class="content-row">
+
+   <div class="calendar-parent">
+        <calendar-view
+          :events="[...jsonData1,...jsonDatas.flat()]"
+          :show-date="showDate"
+          :time-format-options="{ hour: 'numeric', minute: '2-digit' }"
+          :enable-drag-drop="true"
+          :disable-past="disablePast"
+          :disable-future="disableFuture"
+          :show-event-times="showEventTimes"
+        
+          :display-period-uom="displayPeriodUom"
+          :display-period-count="displayPeriodCount"
+          :starting-day-of-week="startingDayOfWeek"
+          :class="themeClasses"
+          :period-changed-callback="periodChanged"
+          :current-period-label="useTodayIcons ? 'icons' : ''"
+          @drop-on-date="onDrop"
+          @click-date="onClickDay"
+          @click-event="onClickItem"
+        >
+          <calendar-view-header
+            slot="header"
+            slot-scope="{ headerProps }"
+            :header-props="headerProps"
+            @input="setShowDate"
+          />
+        </calendar-view>
+      </div>
+    </div>
+
+      <!-- <div class="calendar-controls">
+        <div v-if="message" class="notification is-success">{{ message }}</div>
+  
+        <div class="box">
+    
+          <div class="field">
+            <label class="label">Period UOM</label>
+            <div class="control">
+              <div class="select">
+                <select v-model="displayPeriodUom">
+                  <option>month</option>
+                  <option>week</option>
+                  <option>year</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div> -->
+
+<!--           
   
           <div class="field">
             <label class="label">Period Count</label>
@@ -96,8 +148,14 @@
           </div>
   
           <button class="button is-info" @click="clickTestAddItem">Add Item</button>
-        </div>
-      </div>
+ -->
+
+
+
+       
+  
+
+<!-- 
       <div class="calendar-parent">
         <calendar-view
           :events="[...jsonData1,...jsonDatas.flat()]"
@@ -125,7 +183,8 @@
             @input="setShowDate"
           />
         </calendar-view>
-      </div>
+      </div> -->
+
     </div>
   </template>
   <script>
@@ -295,14 +354,17 @@
               const t = new Date()
               return new Date(t.getFullYear(), t.getMonth(), d, h || 0, m || 0)
           },
-          onClickDay(d) {
-              this.message = `You clicked: ${d.toLocaleDateString()}`
+          onClickDay() {
+           
+              console.log("You clicked: ${d.toLocaleDateString()}")
           },
-          onClickItem(e) {
-              this.message = `You clicked: ${e.title}`
+          onClickItem() {
+              // this.message = `You clicked: ${e.title}`
+
+              console.log("`You clicked: ${e.title}`")
           },
           setShowDate(d) {
-              this.message = `Changing calendar view to ${d.toLocaleDateString()}`
+              console.log("Changing calendar view to ${d.toLocaleDateString()}")
               this.showDate = d
           },
           onDrop(item, date) {
@@ -330,61 +392,70 @@
       },
   }
   </script>
-  
-  <style>
-  html,
-  body {
-      height: 100%;
-      margin: 0;
-      background-color: #f7fcff;
+  <style >
+  #calendar_app {
+    display: flex;
+    flex-direction: column;
+    font-family: Calibri, sans-serif;
+    width: 750px;
+    
+    
+    height: 800px;
+    margin-left: auto;
+    margin-right: auto;
   }
-  
-  #app {
-      display: flex;
-      flex-direction: row;
-      font-family: Calibri, sans-serif;
-      width: 95vw;
-      min-width: 30rem;
-      max-width: 100rem;
-      min-height: 40rem;
-      margin-left: auto;
-      margin-right: auto;
+
+  .header {
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
+    justify-content: space-between;
+    margin-bottom: 1rem; /* Adjust the margin as needed */
+    
+   
   }
-  
-  .calendar-controls {
-      margin-right: 1rem;
-      min-width: 14rem;
-      max-width: 14rem;
-  }
-  
+
   .calendar-parent {
-      display: flex;
-      flex-direction: column;
-      flex-grow: 1;
-      overflow-x: hidden;
-      overflow-y: hidden;
-      max-height: 80vh;
-      background-color: white;
+    flex-grow: 1;
+    overflow-x: hidden;
+    overflow-y: hidden;
+    height: 600px;
+    
+    background-color: white;
+    margin-right: 1rem; /* Adjust the margin to create space between the two sections */
+    margin-left: 1rem;
   }
-  
+
+  .calendar-controls {
+    min-width: 14rem;
+    max-width: 14em;
+  }
+
+  .content-row {
+    display: flex;
+    flex-direction: row;
+  }
+
+
   /* For long calendars, ensure each week gets sufficient height. The body of the calendar will scroll if needed */
   .cv-wrapper.period-month.periodCount-2 .cv-week,
   .cv-wrapper.period-month.periodCount-3 .cv-week,
   .cv-wrapper.period-year .cv-week {
-      min-height: 6rem;
+    min-height: 6rem;
   }
-  
-  /* These styles are optional, to illustrate the flexbility of styling the calendar purely with CSS. */
-  
+
+  button {
+    background-color: white !important;
+  }
+
   /* Add some styling for items tagged with the "birthday" class */
   .theme-default .cv-event.birthday {
-      background-color: #e0f0e0;
-      border-color: #d7e7d7;
+    background-color: #e0f0e0;
+    border-color: #d7e7d7;
   }
-  
+
   .theme-default .cv-event.birthday::before {
-      content: "\1F382"; /* Birthday cake */
-      margin-right: 0.5em;
+    content: "\1F382"; /* Birthday cake */
+    margin-right: 0.5em;
   }
-  </style>
-  
+</style>
